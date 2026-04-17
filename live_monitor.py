@@ -12,6 +12,7 @@ import csv
 import time
 import os
 import sys
+import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -35,6 +36,10 @@ STATE_FILE = Path("monitor_state.json")
 
 # Known weather trader to discover events
 WEATHER_TRADER = "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11"
+
+# GitHub sync
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = "hectorm17/polymarket-tracker"
 
 MONTH_MAP = {
     "january": 1, "february": 2, "march": 3, "april": 4,
@@ -76,6 +81,40 @@ def append_csv(row):
         if not exists:
             writer.writeheader()
         writer.writerow(row)
+
+
+def push_to_github(filename):
+    """Push a local file to GitHub so Streamlit Cloud can read it."""
+    if not GITHUB_TOKEN:
+        return
+    try:
+        with open(filename, "rb") as f:
+            content = base64.b64encode(f.read()).decode()
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{filename}"
+        r = requests.get(api_url, headers=headers, timeout=10)
+        sha = r.json().get("sha") if r.status_code == 200 else None
+        payload = {
+            "message": f"auto: update {filename} {datetime.now().strftime('%H:%M')}",
+            "content": content,
+            "branch": "main",
+        }
+        if sha:
+            payload["sha"] = sha
+        r = requests.put(api_url, headers=headers, json=payload, timeout=15)
+        if r.status_code in (200, 201):
+            print(f"    📤 {filename} pushed to GitHub")
+        else:
+            print(f"    ⚠️  GitHub push failed for {filename}: {r.status_code}")
+    except Exception as e:
+        print(f"    ⚠️  GitHub push error: {e}")
+
+
+def sync_to_github():
+    """Push both data files to GitHub."""
+    push_to_github(str(CSV_FILE))
+    push_to_github(str(STATE_FILE))
+
 
 
 # ─────────────────────────────────────────────
@@ -571,7 +610,10 @@ def main():
             # 3. Display dashboard
             print_dashboard(state, new_signals)
 
-            # 4. Wait
+            # 4. Sync to GitHub
+            sync_to_github()
+
+            # 5. Wait
             for remaining in range(SCAN_INTERVAL, 0, -1):
                 mins, secs = divmod(remaining, 60)
                 sys.stdout.write(f"\r  Next scan in {mins:02d}:{secs:02d}  ")

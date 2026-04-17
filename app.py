@@ -636,21 +636,51 @@ Question : trade à envisager ? Si oui, dans quel sens, à quel niveau, quel sto
 
 with main_tab_paper:
 
-    PAPER_CSV = Path("paper_trades.csv")
-    PAPER_STATE = Path("monitor_state.json")
+    GITHUB_RAW = "https://raw.githubusercontent.com/hectorm17/polymarket-tracker/main"
+    PAPER_CSV_LOCAL = Path("paper_trades.csv")
+    PAPER_STATE_LOCAL = Path("monitor_state.json")
+
+    @st.cache_data(ttl=60)
+    def load_paper_csv():
+        # Try local first (when running locally alongside live_monitor)
+        if PAPER_CSV_LOCAL.exists():
+            return pd.read_csv(PAPER_CSV_LOCAL)
+        # Fallback: fetch from GitHub
+        try:
+            import io
+            r = requests.get(f"{GITHUB_RAW}/paper_trades.csv", timeout=10)
+            if r.status_code == 200:
+                return pd.read_csv(io.StringIO(r.text))
+        except Exception:
+            pass
+        return None
+
+    @st.cache_data(ttl=60)
+    def load_paper_state():
+        if PAPER_STATE_LOCAL.exists():
+            with open(PAPER_STATE_LOCAL) as f:
+                return _json.load(f)
+        try:
+            r = requests.get(f"{GITHUB_RAW}/monitor_state.json", timeout=10)
+            if r.status_code == 200:
+                return r.json()
+        except Exception:
+            pass
+        return None
 
     hdr1, hdr2 = st.columns([6, 1])
     hdr1.markdown(f"🟡 **PAPER TRADING LIVE** &nbsp; Dernière MAJ : `{datetime.now().strftime('%H:%M:%S')}`")
     if hdr2.button("⟳ Refresh", key="refresh_paper", use_container_width=True):
+        st.cache_data.clear()
         st.rerun()
 
     # ── Load data ──
-    if not PAPER_CSV.exists() or not PAPER_STATE.exists():
-        st.warning("Live monitor pas encore démarré. Lance `python3 live_monitor.py` dans un terminal.")
+    df = load_paper_csv()
+    state_data = load_paper_state()
+
+    if df is None or state_data is None:
+        st.warning("Live monitor pas encore démarré. Lance `python3 live_monitor.py` dans un terminal, ou les données n'ont pas encore été pushées sur GitHub.")
     else:
-        df = pd.read_csv(PAPER_CSV)
-        with open(PAPER_STATE) as f:
-            state_data = _json.load(f)
 
         bankroll = state_data.get("bankroll", 1000)
         start_time = state_data.get("start_time", "")
