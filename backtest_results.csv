@@ -1,0 +1,374 @@
+City,Date,Target,Type,Real,Mkt,Ours,Edge,Signal,Result,Correct,P&L
+Kuala Lumpur,2026-04-16,26°C,lte_c,34.0°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,27°C,exact_c,34.0°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,28°C,exact_c,34.0°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,29°C,exact_c,34.0°C,0.014,0.02,0.006,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,30°C,exact_c,34.0°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,31°C,exact_c,34.0°C,0.07,0.02,-0.05,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-16,32°C,exact_c,34.0°C,0.315,0.02,-0.295,BUY NO,NO,True,31.5
+Kuala Lumpur,2026-04-16,33°C,exact_c,34.0°C,0.395,0.1,-0.295,BUY NO,NO,True,39.5
+Kuala Lumpur,2026-04-16,34°C,exact_c,34.0°C,0.295,0.9,0.605,BUY YES,YES,True,70.5
+Kuala Lumpur,2026-04-16,35°C,exact_c,34.0°C,0.028,0.1,0.073,BUY YES,NO,False,-2.75
+Kuala Lumpur,2026-04-16,36°C,gte_c,34.0°C,0.018,0.05,0.033,SKIP,NO,,0.0
+Jeddah,2026-04-16,31°C,exact_c,36.5°C,0.04,0.02,-0.02,SKIP,NO,,0.0
+Jeddah,2026-04-16,32°C,exact_c,36.5°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Jeddah,2026-04-16,33°C,exact_c,36.5°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Jeddah,2026-04-16,34°C,exact_c,36.5°C,0.079,0.02,-0.059,BUY NO,NO,True,7.9
+Jeddah,2026-04-16,35°C,exact_c,36.5°C,0.155,0.02,-0.135,BUY NO,NO,True,15.5
+Jeddah,2026-04-16,36°C,exact_c,36.5°C,0.27,0.1,-0.17,BUY NO,NO,True,27.0
+Jeddah,2026-04-16,37°C,exact_c,36.5°C,0.22,0.1,-0.12,BUY NO,NO,True,22.0
+Jeddah,2026-04-16,38°C,exact_c,36.5°C,0.135,0.02,-0.115,BUY NO,NO,True,13.5
+Jeddah,2026-04-16,39°C,exact_c,36.5°C,0.086,0.02,-0.066,BUY NO,NO,True,8.6
+Jeddah,2026-04-16,40°C,gte_c,36.5°C,0.029,0.05,0.021,SKIP,NO,,0.0
+Wellington,2026-04-16,15°C,exact_c,16.1°C,0.013,0.1,0.087,BUY YES,NO,False,-1.3
+Wellington,2026-04-16,16°C,exact_c,16.1°C,0.094,0.9,0.806,BUY YES,YES,True,90.6
+Wellington,2026-04-16,17°C,exact_c,16.1°C,0.355,0.1,-0.255,BUY NO,NO,True,35.5
+Wellington,2026-04-16,18°C,exact_c,16.1°C,0.525,0.02,-0.505,BUY NO,NO,True,52.5
+Wellington,2026-04-16,19°C,exact_c,16.1°C,0.214,0.02,-0.195,BUY NO,NO,True,21.45
+Wellington,2026-04-16,21°C,gte_c,16.1°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Los Angeles,2026-04-16,74°F,gte_f,24.4°C,0.053,0.55,0.497,BUY YES,YES,True,94.7
+Beijing,2026-04-16,18°C,lte_c,18.8°C,0.535,0.05,-0.485,BUY NO,NO,True,53.5
+Beijing,2026-04-16,19°C,exact_c,18.8°C,0.205,0.9,0.695,BUY YES,YES,True,79.5
+Beijing,2026-04-16,20°C,exact_c,18.8°C,0.125,0.1,-0.025,SKIP,NO,,0.0
+Beijing,2026-04-16,21°C,exact_c,18.8°C,0.045,0.02,-0.025,SKIP,NO,,0.0
+Beijing,2026-04-16,22°C,exact_c,18.8°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Beijing,2026-04-16,23°C,exact_c,18.8°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Beijing,2026-04-16,24°C,exact_c,18.8°C,0.012,0.02,0.008,SKIP,NO,,0.0
+Beijing,2026-04-16,26°C,exact_c,18.8°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Shanghai,2026-04-16,16°C,exact_c,20.7°C,0.11,0.02,-0.09,BUY NO,NO,True,11.0
+Shanghai,2026-04-16,17°C,exact_c,20.7°C,0.053,0.02,-0.034,SKIP,NO,,0.0
+Shanghai,2026-04-16,18°C,exact_c,20.7°C,0.21,0.02,-0.19,BUY NO,NO,True,21.0
+Shanghai,2026-04-16,19°C,exact_c,20.7°C,0.4,0.02,-0.38,BUY NO,NO,True,40.0
+Shanghai,2026-04-16,20°C,exact_c,20.7°C,0.205,0.1,-0.105,BUY NO,NO,True,20.5
+Shanghai,2026-04-16,21°C,exact_c,20.7°C,0.056,0.9,0.844,BUY YES,YES,True,94.4
+Shanghai,2026-04-16,22°C,gte_c,20.7°C,0.018,0.05,0.032,SKIP,NO,,0.0
+Helsinki,2026-04-16,5°C,exact_c,12.1°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Helsinki,2026-04-16,8°C,exact_c,12.1°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Helsinki,2026-04-16,9°C,exact_c,12.1°C,0.016,0.02,0.004,SKIP,NO,,0.0
+Helsinki,2026-04-16,10°C,exact_c,12.1°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Helsinki,2026-04-16,11°C,exact_c,12.1°C,0.335,0.1,-0.235,BUY NO,NO,True,33.5
+Helsinki,2026-04-16,12°C,exact_c,12.1°C,0.325,0.9,0.575,BUY YES,YES,True,67.5
+Helsinki,2026-04-16,13°C,gte_c,12.1°C,0.225,0.05,-0.175,BUY NO,NO,True,22.5
+Singapore,2026-04-16,28°C,exact_c,32.1°C,0.016,0.02,0.004,SKIP,NO,,0.0
+Singapore,2026-04-16,30°C,exact_c,32.1°C,0.062,0.02,-0.042,SKIP,NO,,0.0
+Singapore,2026-04-16,31°C,exact_c,32.1°C,0.26,0.1,-0.16,BUY NO,NO,True,26.0
+Singapore,2026-04-16,32°C,exact_c,32.1°C,0.405,0.9,0.495,BUY YES,YES,True,59.5
+Singapore,2026-04-16,33°C,exact_c,32.1°C,0.195,0.1,-0.095,BUY NO,NO,True,19.5
+Singapore,2026-04-16,34°C,gte_c,32.1°C,0.082,0.05,-0.032,SKIP,NO,,0.0
+Chicago,2026-04-16,61°F,lte_f,20.6°C,0.015,0.05,0.036,SKIP,NO,,0.0
+Chicago,2026-04-16,80°F,gte_f,20.6°C,0.015,0.05,0.036,SKIP,NO,,0.0
+Lagos,2026-04-16,28°C,lte_c,30.6°C,0.103,0.05,-0.053,BUY NO,NO,True,10.35
+Lagos,2026-04-16,29°C,exact_c,30.6°C,0.045,0.02,-0.025,SKIP,NO,,0.0
+Lagos,2026-04-16,30°C,exact_c,30.6°C,0.018,0.1,0.082,BUY YES,NO,False,-1.8
+Lagos,2026-04-16,31°C,exact_c,30.6°C,0.06,0.9,0.84,BUY YES,YES,True,93.95
+Lagos,2026-04-16,32°C,exact_c,30.6°C,0.025,0.1,0.076,BUY YES,NO,False,-2.45
+Lagos,2026-04-16,33°C,exact_c,30.6°C,0.24,0.02,-0.22,BUY NO,NO,True,24.0
+Lagos,2026-04-16,34°C,exact_c,30.6°C,0.215,0.02,-0.195,BUY NO,NO,True,21.5
+Lagos,2026-04-16,35°C,exact_c,30.6°C,0.19,0.02,-0.17,BUY NO,NO,True,19.0
+Lagos,2026-04-16,36°C,exact_c,30.6°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Lagos,2026-04-16,37°C,exact_c,30.6°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Houston,2026-04-16,94°F,gte_f,28.4°C,0.022,0.05,0.028,SKIP,NO,,0.0
+Busan,2026-04-16,14°C,exact_c,17.7°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Busan,2026-04-16,15°C,exact_c,17.7°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Busan,2026-04-16,16°C,exact_c,17.7°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Busan,2026-04-16,17°C,exact_c,17.7°C,0.021,0.1,0.08,BUY YES,NO,False,-2.05
+Busan,2026-04-16,18°C,exact_c,17.7°C,0.09,0.9,0.81,BUY YES,YES,True,91.0
+Busan,2026-04-16,19°C,exact_c,17.7°C,0.285,0.1,-0.185,BUY NO,NO,True,28.5
+Busan,2026-04-16,20°C,exact_c,17.7°C,0.255,0.02,-0.235,BUY NO,NO,True,25.5
+Busan,2026-04-16,21°C,exact_c,17.7°C,0.165,0.02,-0.145,BUY NO,NO,True,16.5
+Busan,2026-04-16,22°C,exact_c,17.7°C,0.13,0.02,-0.11,BUY NO,NO,True,13.0
+Busan,2026-04-16,23°C,gte_c,17.7°C,0.065,0.05,-0.015,SKIP,NO,,0.0
+Nyc,2026-04-16,77°F,lte_f,33.4°C,0.018,0.05,0.032,SKIP,NO,,0.0
+Nyc,2026-04-16,96°F,gte_f,33.4°C,0.011,0.05,0.04,SKIP,NO,,0.0
+Chongqing,2026-04-16,19°C,lte_c,24.9°C,0.013,0.05,0.037,SKIP,NO,,0.0
+Chongqing,2026-04-16,20°C,exact_c,24.9°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Chongqing,2026-04-16,21°C,exact_c,24.9°C,0.019,0.02,0.001,SKIP,NO,,0.0
+Chongqing,2026-04-16,22°C,exact_c,24.9°C,0.062,0.02,-0.042,SKIP,NO,,0.0
+Chongqing,2026-04-16,23°C,exact_c,24.9°C,0.245,0.02,-0.225,BUY NO,NO,True,24.5
+Chongqing,2026-04-16,24°C,exact_c,24.9°C,0.315,0.1,-0.215,BUY NO,NO,True,31.5
+Chongqing,2026-04-16,25°C,exact_c,24.9°C,0.255,0.9,0.645,BUY YES,YES,True,74.5
+Chongqing,2026-04-16,26°C,exact_c,24.9°C,0.528,0.1,-0.428,BUY NO,NO,True,52.85
+Chongqing,2026-04-16,27°C,exact_c,24.9°C,0.204,0.02,-0.184,BUY NO,NO,True,20.45
+Chongqing,2026-04-16,28°C,exact_c,24.9°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Chongqing,2026-04-16,29°C,gte_c,24.9°C,0.015,0.05,0.036,SKIP,NO,,0.0
+Miami,2026-04-16,86°F,gte_f,27.0°C,0.029,0.05,0.021,SKIP,NO,,0.0
+Lagos,2026-04-15,27°C,lte_c,31.0°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Lagos,2026-04-15,28°C,exact_c,31.0°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Lagos,2026-04-15,29°C,exact_c,31.0°C,0.035,0.02,-0.015,SKIP,NO,,0.0
+Lagos,2026-04-15,30°C,exact_c,31.0°C,0.018,0.1,0.082,BUY YES,NO,False,-1.8
+Lagos,2026-04-15,31°C,exact_c,31.0°C,0.064,0.9,0.837,BUY YES,YES,True,93.65
+Lagos,2026-04-15,32°C,exact_c,31.0°C,0.285,0.1,-0.185,BUY NO,NO,True,28.5
+Lagos,2026-04-15,33°C,exact_c,31.0°C,0.31,0.02,-0.29,BUY NO,NO,True,31.0
+Lagos,2026-04-15,34°C,exact_c,31.0°C,0.305,0.02,-0.285,BUY NO,NO,True,30.5
+Lagos,2026-04-15,35°C,exact_c,31.0°C,0.165,0.02,-0.145,BUY NO,NO,True,16.5
+Lagos,2026-04-15,36°C,exact_c,31.0°C,0.439,0.02,-0.419,BUY NO,NO,True,43.9
+Lagos,2026-04-15,37°C,gte_c,31.0°C,0.025,0.05,0.025,SKIP,NO,,0.0
+Lucknow,2026-04-15,37°C,lte_c,39.8°C,0.013,0.05,0.037,SKIP,NO,,0.0
+Lucknow,2026-04-15,38°C,exact_c,39.8°C,0.1,0.02,-0.08,BUY NO,NO,True,10.0
+Lucknow,2026-04-15,39°C,exact_c,39.8°C,0.46,0.1,-0.36,BUY NO,NO,True,46.0
+Lucknow,2026-04-15,40°C,exact_c,39.8°C,0.43,0.9,0.47,BUY YES,YES,True,57.0
+Lucknow,2026-04-15,41°C,exact_c,39.8°C,0.13,0.1,-0.03,SKIP,NO,,0.0
+Lucknow,2026-04-15,42°C,exact_c,39.8°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Lucknow,2026-04-15,43°C,exact_c,39.8°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Lucknow,2026-04-15,46°C,exact_c,39.8°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Shanghai,2026-04-15,11°C,exact_c,20.2°C,0.065,0.02,-0.045,SKIP,NO,,0.0
+Shanghai,2026-04-15,14°C,exact_c,20.2°C,0.165,0.02,-0.145,BUY NO,NO,True,16.5
+Shanghai,2026-04-15,16°C,exact_c,20.2°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Shanghai,2026-04-15,17°C,exact_c,20.2°C,0.028,0.02,-0.007,SKIP,NO,,0.0
+Shanghai,2026-04-15,18°C,exact_c,20.2°C,0.14,0.02,-0.12,BUY NO,NO,True,14.0
+Shanghai,2026-04-15,19°C,exact_c,20.2°C,0.395,0.1,-0.295,BUY NO,NO,True,39.5
+Shanghai,2026-04-15,20°C,gte_c,20.2°C,0.44,0.6,0.16,BUY YES,YES,True,56.0
+Austin,2026-04-15,80°F,gte_f,29.1°C,0.97,0.95,-0.02,SKIP,YES,,0.0
+Singapore,2026-04-15,26°C,exact_c,29.6°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Singapore,2026-04-15,27°C,exact_c,29.6°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Singapore,2026-04-15,28°C,exact_c,29.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Singapore,2026-04-15,29°C,exact_c,29.6°C,0.051,0.1,0.05,SKIP,NO,,0.0
+Singapore,2026-04-15,30°C,exact_c,29.6°C,0.33,0.9,0.57,BUY YES,YES,True,67.0
+Singapore,2026-04-15,31°C,exact_c,29.6°C,0.36,0.1,-0.26,BUY NO,NO,True,36.0
+Singapore,2026-04-15,32°C,exact_c,29.6°C,0.235,0.02,-0.215,BUY NO,NO,True,23.5
+Singapore,2026-04-15,33°C,exact_c,29.6°C,0.066,0.02,-0.046,SKIP,NO,,0.0
+Singapore,2026-04-15,34°C,exact_c,29.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Singapore,2026-04-15,35°C,gte_c,29.6°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Wellington,2026-04-15,13°C,exact_c,16.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Wellington,2026-04-15,14°C,exact_c,16.6°C,0.027,0.02,-0.007,SKIP,NO,,0.0
+Wellington,2026-04-15,15°C,exact_c,16.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Wellington,2026-04-15,16°C,exact_c,16.6°C,0.16,0.1,-0.06,BUY NO,NO,True,16.0
+Wellington,2026-04-15,17°C,exact_c,16.6°C,0.3,0.9,0.6,BUY YES,YES,True,70.0
+Wellington,2026-04-15,18°C,exact_c,16.6°C,0.44,0.1,-0.34,BUY NO,NO,True,44.0
+Wellington,2026-04-15,19°C,exact_c,16.6°C,0.135,0.02,-0.115,BUY NO,NO,True,13.5
+Wellington,2026-04-15,20°C,gte_c,16.6°C,0.021,0.05,0.03,SKIP,NO,,0.0
+Munich,2026-04-15,7°C,exact_c,13.6°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Munich,2026-04-15,9°C,exact_c,13.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Munich,2026-04-15,10°C,exact_c,13.6°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Munich,2026-04-15,11°C,exact_c,13.6°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Munich,2026-04-15,12°C,exact_c,13.6°C,0.029,0.02,-0.009,SKIP,NO,,0.0
+Munich,2026-04-15,13°C,exact_c,13.6°C,0.11,0.1,-0.01,SKIP,NO,,0.0
+Munich,2026-04-15,14°C,exact_c,13.6°C,0.415,0.9,0.485,BUY YES,YES,True,58.5
+Munich,2026-04-15,15°C,exact_c,13.6°C,0.315,0.1,-0.215,BUY NO,NO,True,31.5
+Munich,2026-04-15,16°C,gte_c,13.6°C,0.27,0.05,-0.22,BUY NO,NO,True,27.0
+Tokyo,2026-04-15,14°C,lte_c,23.0°C,0.026,0.05,0.024,SKIP,NO,,0.0
+Tokyo,2026-04-15,16°C,exact_c,23.0°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Tokyo,2026-04-15,17°C,exact_c,23.0°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Tokyo,2026-04-15,18°C,exact_c,23.0°C,0.035,0.02,-0.015,SKIP,NO,,0.0
+Tokyo,2026-04-15,19°C,exact_c,23.0°C,0.088,0.02,-0.068,BUY NO,NO,True,8.8
+Tokyo,2026-04-15,20°C,exact_c,23.0°C,0.47,0.02,-0.45,BUY NO,NO,True,47.0
+Tokyo,2026-04-15,21°C,exact_c,23.0°C,0.375,0.02,-0.355,BUY NO,NO,True,37.5
+Tokyo,2026-04-15,22°C,exact_c,23.0°C,0.201,0.1,-0.101,BUY NO,NO,True,20.05
+Tokyo,2026-04-15,23°C,exact_c,23.0°C,0.035,0.9,0.866,BUY YES,YES,True,96.55
+Tokyo,2026-04-15,24°C,gte_c,23.0°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Warsaw,2026-04-15,6°C,exact_c,15.6°C,0.019,0.02,0.001,SKIP,NO,,0.0
+Warsaw,2026-04-15,7°C,exact_c,15.6°C,0.022,0.02,-0.002,SKIP,NO,,0.0
+Warsaw,2026-04-15,9°C,exact_c,15.6°C,0.075,0.02,-0.055,BUY NO,NO,True,7.5
+Warsaw,2026-04-15,10°C,exact_c,15.6°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Warsaw,2026-04-15,11°C,exact_c,15.6°C,0.027,0.02,-0.007,SKIP,NO,,0.0
+Warsaw,2026-04-15,12°C,exact_c,15.6°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Warsaw,2026-04-15,13°C,exact_c,15.6°C,0.017,0.02,0.003,SKIP,NO,,0.0
+Warsaw,2026-04-15,14°C,exact_c,15.6°C,0.108,0.02,-0.088,BUY NO,NO,True,10.85
+Warsaw,2026-04-15,15°C,gte_c,15.6°C,0.855,0.6,-0.255,BUY NO,YES,False,-14.5
+Beijing,2026-04-14,18°C,lte_c,18.1°C,0.074,0.6,0.526,BUY YES,YES,True,92.6
+Beijing,2026-04-14,19°C,exact_c,18.1°C,0.185,0.1,-0.085,BUY NO,NO,True,18.5
+Beijing,2026-04-14,20°C,exact_c,18.1°C,0.255,0.02,-0.235,BUY NO,NO,True,25.5
+Beijing,2026-04-14,21°C,exact_c,18.1°C,0.295,0.02,-0.275,BUY NO,NO,True,29.5
+Beijing,2026-04-14,22°C,exact_c,18.1°C,0.12,0.02,-0.1,BUY NO,NO,True,12.0
+Beijing,2026-04-14,23°C,exact_c,18.1°C,0.028,0.02,-0.007,SKIP,NO,,0.0
+Beijing,2026-04-14,24°C,exact_c,18.1°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Beijing,2026-04-14,25°C,exact_c,18.1°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Beijing,2026-04-14,26°C,exact_c,18.1°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Lucknow,2026-04-14,35°C,lte_c,38.7°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Lucknow,2026-04-14,36°C,exact_c,38.7°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Lucknow,2026-04-14,37°C,exact_c,38.7°C,0.075,0.02,-0.055,BUY NO,NO,True,7.5
+Lucknow,2026-04-14,38°C,exact_c,38.7°C,0.924,0.1,-0.825,BUY NO,NO,True,92.45
+Lucknow,2026-04-14,39°C,exact_c,38.7°C,0.42,0.9,0.48,BUY YES,YES,True,58.0
+Lucknow,2026-04-14,40°C,exact_c,38.7°C,0.057,0.1,0.044,SKIP,NO,,0.0
+Lucknow,2026-04-14,41°C,exact_c,38.7°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Lucknow,2026-04-14,42°C,exact_c,38.7°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Lucknow,2026-04-14,43°C,exact_c,38.7°C,0.03,0.02,-0.01,SKIP,NO,,0.0
+Lucknow,2026-04-14,45°C,gte_c,38.7°C,0.033,0.05,0.018,SKIP,NO,,0.0
+Busan,2026-04-14,14°C,lte_c,17.5°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Busan,2026-04-14,15°C,exact_c,17.5°C,0.017,0.02,0.003,SKIP,NO,,0.0
+Busan,2026-04-14,16°C,exact_c,17.5°C,0.035,0.02,-0.015,SKIP,NO,,0.0
+Busan,2026-04-14,17°C,exact_c,17.5°C,0.08,0.1,0.02,SKIP,NO,,0.0
+Busan,2026-04-14,18°C,exact_c,17.5°C,0.275,0.1,-0.175,BUY NO,NO,True,27.5
+Busan,2026-04-14,19°C,exact_c,17.5°C,0.2,0.02,-0.18,BUY NO,NO,True,20.0
+Busan,2026-04-14,20°C,exact_c,17.5°C,0.165,0.02,-0.145,BUY NO,NO,True,16.5
+Busan,2026-04-14,21°C,exact_c,17.5°C,0.035,0.02,-0.015,SKIP,NO,,0.0
+Busan,2026-04-14,22°C,exact_c,17.5°C,0.026,0.02,-0.006,SKIP,NO,,0.0
+Busan,2026-04-14,23°C,exact_c,17.5°C,0.014,0.02,0.006,SKIP,NO,,0.0
+Nyc,2026-04-14,71°F,lte_f,31.1°C,0.041,0.05,0.01,SKIP,NO,,0.0
+Nyc,2026-04-14,90°F,gte_f,31.1°C,0.014,0.05,0.036,SKIP,NO,,0.0
+London,2026-04-14,13°C,exact_c,16.5°C,0.015,0.02,0.005,SKIP,NO,,0.0
+London,2026-04-14,14°C,exact_c,16.5°C,0.058,0.02,-0.038,SKIP,NO,,0.0
+London,2026-04-14,15°C,exact_c,16.5°C,0.17,0.02,-0.15,BUY NO,NO,True,17.0
+London,2026-04-14,16°C,exact_c,16.5°C,0.49,0.1,-0.39,BUY NO,NO,True,49.0
+London,2026-04-14,17°C,exact_c,16.5°C,0.295,0.1,-0.195,BUY NO,NO,True,29.5
+London,2026-04-14,18°C,exact_c,16.5°C,0.029,0.02,-0.009,SKIP,NO,,0.0
+London,2026-04-14,19°C,exact_c,16.5°C,0.028,0.02,-0.008,SKIP,NO,,0.0
+London,2026-04-14,20°C,gte_c,16.5°C,0.041,0.05,0.009,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,25°C,lte_c,30.2°C,0.04,0.05,0.01,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,26°C,exact_c,30.2°C,0.065,0.02,-0.045,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,27°C,exact_c,30.2°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,28°C,exact_c,30.2°C,0.012,0.02,0.008,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,29°C,exact_c,30.2°C,0.024,0.1,0.076,BUY YES,NO,False,-2.4
+Kuala Lumpur,2026-04-14,30°C,exact_c,30.2°C,0.21,0.9,0.69,BUY YES,YES,True,79.0
+Kuala Lumpur,2026-04-14,31°C,exact_c,30.2°C,0.37,0.1,-0.27,BUY NO,NO,True,37.0
+Kuala Lumpur,2026-04-14,32°C,exact_c,30.2°C,0.205,0.02,-0.185,BUY NO,NO,True,20.5
+Kuala Lumpur,2026-04-14,33°C,exact_c,30.2°C,0.1,0.02,-0.08,BUY NO,NO,True,10.0
+Kuala Lumpur,2026-04-14,34°C,exact_c,30.2°C,0.027,0.02,-0.007,SKIP,NO,,0.0
+Kuala Lumpur,2026-04-14,35°C,gte_c,30.2°C,0.023,0.05,0.027,SKIP,NO,,0.0
+Wellington,2026-04-14,11°C,lte_c,16.9°C,0.013,0.05,0.037,SKIP,NO,,0.0
+Wellington,2026-04-14,12°C,exact_c,16.9°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Wellington,2026-04-14,13°C,exact_c,16.9°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Wellington,2026-04-14,14°C,exact_c,16.9°C,0.035,0.02,-0.015,SKIP,NO,,0.0
+Wellington,2026-04-14,15°C,exact_c,16.9°C,0.024,0.02,-0.003,SKIP,NO,,0.0
+Wellington,2026-04-14,16°C,exact_c,16.9°C,0.105,0.1,-0.005,SKIP,NO,,0.0
+Wellington,2026-04-14,17°C,exact_c,16.9°C,0.32,0.9,0.58,BUY YES,YES,True,68.0
+Wellington,2026-04-14,18°C,exact_c,16.9°C,0.46,0.1,-0.36,BUY NO,NO,True,46.0
+Wellington,2026-04-14,19°C,exact_c,16.9°C,0.285,0.02,-0.265,BUY NO,NO,True,28.5
+Wellington,2026-04-14,20°C,exact_c,16.9°C,0.039,0.02,-0.019,SKIP,NO,,0.0
+Wellington,2026-04-14,21°C,gte_c,16.9°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Atlanta,2026-04-14,75°F,lte_f,29.0°C,0.025,0.05,0.025,SKIP,NO,,0.0
+Atlanta,2026-04-14,94°F,gte_f,29.0°C,0.016,0.05,0.034,SKIP,NO,,0.0
+Tokyo,2026-04-14,15°C,lte_c,23.5°C,0.018,0.05,0.032,SKIP,NO,,0.0
+Tokyo,2026-04-14,17°C,exact_c,23.5°C,0.03,0.02,-0.01,SKIP,NO,,0.0
+Tokyo,2026-04-14,19°C,exact_c,23.5°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Tokyo,2026-04-14,20°C,exact_c,23.5°C,0.032,0.02,-0.011,SKIP,NO,,0.0
+Tokyo,2026-04-14,21°C,exact_c,23.5°C,0.125,0.02,-0.105,BUY NO,NO,True,12.5
+Tokyo,2026-04-14,22°C,exact_c,23.5°C,0.345,0.02,-0.325,BUY NO,NO,True,34.5
+Tokyo,2026-04-14,23°C,exact_c,23.5°C,0.385,0.1,-0.285,BUY NO,NO,True,38.5
+Tokyo,2026-04-14,24°C,exact_c,23.5°C,0.115,0.1,-0.015,SKIP,NO,,0.0
+Tokyo,2026-04-14,25°C,gte_c,23.5°C,0.024,0.05,0.027,SKIP,NO,,0.0
+Panama City,2026-04-14,23°C,lte_c,33.5°C,0.13,0.05,-0.08,BUY NO,NO,True,13.0
+Panama City,2026-04-14,24°C,exact_c,33.5°C,0.13,0.02,-0.11,BUY NO,NO,True,13.0
+Panama City,2026-04-14,25°C,exact_c,33.5°C,0.13,0.02,-0.11,BUY NO,NO,True,13.0
+Panama City,2026-04-14,26°C,exact_c,33.5°C,0.019,0.02,0.001,SKIP,NO,,0.0
+Panama City,2026-04-14,27°C,exact_c,33.5°C,0.042,0.02,-0.022,SKIP,NO,,0.0
+Panama City,2026-04-14,28°C,exact_c,33.5°C,0.055,0.02,-0.035,SKIP,NO,,0.0
+Panama City,2026-04-14,29°C,exact_c,33.5°C,0.014,0.02,0.006,SKIP,NO,,0.0
+Panama City,2026-04-14,30°C,exact_c,33.5°C,0.012,0.02,0.008,SKIP,NO,,0.0
+Panama City,2026-04-14,31°C,exact_c,33.5°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Panama City,2026-04-14,32°C,exact_c,33.5°C,0.017,0.02,0.003,SKIP,NO,,0.0
+Panama City,2026-04-14,33°C,gte_c,33.5°C,0.97,0.6,-0.37,BUY NO,YES,False,-3.05
+Toronto,2026-04-14,21°C,lte_c,21.4°C,0.525,0.6,0.075,BUY YES,YES,True,47.5
+Toronto,2026-04-14,22°C,exact_c,21.4°C,0.295,0.1,-0.195,BUY NO,NO,True,29.5
+Toronto,2026-04-14,23°C,exact_c,21.4°C,0.11,0.02,-0.089,BUY NO,NO,True,10.95
+Toronto,2026-04-14,24°C,exact_c,21.4°C,0.064,0.02,-0.043,SKIP,NO,,0.0
+Toronto,2026-04-14,25°C,exact_c,21.4°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Toronto,2026-04-14,26°C,exact_c,21.4°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Toronto,2026-04-14,27°C,exact_c,21.4°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Toronto,2026-04-14,29°C,exact_c,21.4°C,0.03,0.02,-0.01,SKIP,NO,,0.0
+Toronto,2026-04-14,31°C,gte_c,21.4°C,0.015,0.05,0.036,SKIP,NO,,0.0
+Amsterdam,2026-04-14,8°C,lte_c,14.2°C,0.011,0.05,0.04,SKIP,NO,,0.0
+Amsterdam,2026-04-14,9°C,exact_c,14.2°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Amsterdam,2026-04-14,10°C,exact_c,14.2°C,0.07,0.02,-0.05,SKIP,NO,,0.0
+Amsterdam,2026-04-14,12°C,exact_c,14.2°C,0.019,0.02,0.001,SKIP,NO,,0.0
+Amsterdam,2026-04-14,13°C,exact_c,14.2°C,0.035,0.1,0.065,BUY YES,NO,False,-3.55
+Amsterdam,2026-04-14,14°C,exact_c,14.2°C,0.145,0.9,0.755,BUY YES,YES,True,85.5
+Amsterdam,2026-04-14,15°C,exact_c,14.2°C,0.355,0.1,-0.255,BUY NO,NO,True,35.5
+Amsterdam,2026-04-14,16°C,exact_c,14.2°C,0.36,0.02,-0.34,BUY NO,NO,True,36.0
+Amsterdam,2026-04-14,17°C,exact_c,14.2°C,0.045,0.02,-0.025,SKIP,NO,,0.0
+Amsterdam,2026-04-14,18°C,gte_c,14.2°C,0.018,0.05,0.032,SKIP,NO,,0.0
+Austin,2026-04-14,84°F,gte_f,29.3°C,0.715,0.55,-0.165,BUY NO,YES,False,-28.5
+Moscow,2026-04-14,6°C,lte_c,12.9°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Moscow,2026-04-14,7°C,exact_c,12.9°C,0.03,0.02,-0.01,SKIP,NO,,0.0
+Moscow,2026-04-14,8°C,exact_c,12.9°C,0.129,0.02,-0.109,BUY NO,NO,True,12.9
+Moscow,2026-04-14,9°C,exact_c,12.9°C,0.415,0.02,-0.395,BUY NO,NO,True,41.5
+Moscow,2026-04-14,10°C,exact_c,12.9°C,0.355,0.02,-0.335,BUY NO,NO,True,35.5
+Moscow,2026-04-14,11°C,exact_c,12.9°C,0.115,0.02,-0.095,BUY NO,NO,True,11.5
+Moscow,2026-04-14,12°C,exact_c,12.9°C,0.025,0.1,0.076,BUY YES,NO,False,-2.45
+Moscow,2026-04-14,13°C,exact_c,12.9°C,0.411,0.9,0.489,BUY YES,YES,True,58.85
+Moscow,2026-04-14,14°C,exact_c,12.9°C,0.084,0.1,0.017,SKIP,NO,,0.0
+Moscow,2026-04-14,15°C,exact_c,12.9°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Warsaw,2026-04-14,10°C,lte_c,14.6°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Warsaw,2026-04-14,11°C,exact_c,14.6°C,0.017,0.02,0.003,SKIP,NO,,0.0
+Warsaw,2026-04-14,13°C,exact_c,14.6°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Warsaw,2026-04-14,14°C,exact_c,14.6°C,0.201,0.1,-0.101,BUY NO,NO,True,20.05
+Warsaw,2026-04-14,17°C,exact_c,14.6°C,0.034,0.02,-0.014,SKIP,NO,,0.0
+Warsaw,2026-04-14,15°C,exact_c,14.6°C,0.35,0.9,0.55,BUY YES,YES,True,65.0
+Warsaw,2026-04-14,16°C,exact_c,14.6°C,0.295,0.1,-0.195,BUY NO,NO,True,29.5
+Warsaw,2026-04-14,18°C,exact_c,14.6°C,0.065,0.02,-0.045,SKIP,NO,,0.0
+Warsaw,2026-04-14,19°C,exact_c,14.6°C,0.022,0.02,-0.002,SKIP,NO,,0.0
+Warsaw,2026-04-14,20°C,gte_c,14.6°C,0.013,0.05,0.038,SKIP,NO,,0.0
+Chongqing,2026-04-14,16°C,lte_c,21.1°C,0.029,0.05,0.021,SKIP,NO,,0.0
+Chongqing,2026-04-14,17°C,exact_c,21.1°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Chongqing,2026-04-14,18°C,exact_c,21.1°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Chongqing,2026-04-14,19°C,exact_c,21.1°C,0.045,0.02,-0.025,SKIP,NO,,0.0
+Chongqing,2026-04-14,20°C,exact_c,21.1°C,0.235,0.1,-0.135,BUY NO,NO,True,23.5
+Chongqing,2026-04-14,21°C,exact_c,21.1°C,0.38,0.9,0.52,BUY YES,YES,True,62.0
+Chongqing,2026-04-14,22°C,exact_c,21.1°C,0.3,0.1,-0.2,BUY NO,NO,True,30.0
+Chongqing,2026-04-14,23°C,exact_c,21.1°C,0.205,0.02,-0.185,BUY NO,NO,True,20.5
+Chongqing,2026-04-14,24°C,exact_c,21.1°C,0.012,0.02,0.008,SKIP,NO,,0.0
+Chongqing,2026-04-14,25°C,exact_c,21.1°C,0.028,0.02,-0.007,SKIP,NO,,0.0
+Chongqing,2026-04-14,26°C,gte_c,21.1°C,0.018,0.05,0.033,SKIP,NO,,0.0
+Nyc,2026-04-13,61°F,lte_f,26.5°C,0.016,0.05,0.034,SKIP,NO,,0.0
+Nyc,2026-04-13,80°F,gte_f,26.5°C,0.05,0.55,0.5,BUY YES,YES,True,95.0
+Madrid,2026-04-13,13°C,lte_c,14.4°C,0.035,0.05,0.015,SKIP,NO,,0.0
+Madrid,2026-04-13,14°C,exact_c,14.4°C,0.154,0.9,0.746,BUY YES,YES,True,84.55
+Madrid,2026-04-13,15°C,exact_c,14.4°C,0.37,0.1,-0.27,BUY NO,NO,True,37.0
+Madrid,2026-04-13,16°C,exact_c,14.4°C,0.305,0.02,-0.285,BUY NO,NO,True,30.5
+Madrid,2026-04-13,17°C,exact_c,14.4°C,0.125,0.02,-0.105,BUY NO,NO,True,12.5
+Madrid,2026-04-13,18°C,exact_c,14.4°C,0.045,0.02,-0.025,SKIP,NO,,0.0
+Madrid,2026-04-13,19°C,exact_c,14.4°C,0.026,0.02,-0.006,SKIP,NO,,0.0
+Madrid,2026-04-13,20°C,exact_c,14.4°C,0.029,0.02,-0.009,SKIP,NO,,0.0
+Madrid,2026-04-13,21°C,exact_c,14.4°C,0.025,0.02,-0.005,SKIP,NO,,0.0
+Madrid,2026-04-13,22°C,exact_c,14.4°C,0.015,0.02,0.005,SKIP,NO,,0.0
+Madrid,2026-04-13,23°C,gte_c,14.4°C,0.012,0.05,0.038,SKIP,NO,,0.0
+Atlanta,2026-04-13,73°F,lte_f,27.3°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Atlanta,2026-04-13,92°F,gte_f,27.3°C,0.011,0.05,0.04,SKIP,NO,,0.0
+Chengdu,2026-04-13,17°C,lte_c,21.5°C,0.011,0.05,0.039,SKIP,NO,,0.0
+Chengdu,2026-04-13,18°C,exact_c,21.5°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Chengdu,2026-04-13,19°C,exact_c,21.5°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Chengdu,2026-04-13,20°C,exact_c,21.5°C,0.124,0.02,-0.104,BUY NO,NO,True,12.45
+Chengdu,2026-04-13,21°C,exact_c,21.5°C,0.235,0.1,-0.135,BUY NO,NO,True,23.5
+Chengdu,2026-04-13,22°C,exact_c,21.5°C,0.39,0.1,-0.29,BUY NO,NO,True,39.0
+Chengdu,2026-04-13,23°C,exact_c,21.5°C,0.23,0.02,-0.21,BUY NO,NO,True,23.0
+Chengdu,2026-04-13,24°C,exact_c,21.5°C,0.105,0.02,-0.085,BUY NO,NO,True,10.5
+Chengdu,2026-04-13,25°C,exact_c,21.5°C,0.024,0.02,-0.004,SKIP,NO,,0.0
+Chengdu,2026-04-13,26°C,exact_c,21.5°C,0.028,0.02,-0.007,SKIP,NO,,0.0
+Chengdu,2026-04-13,27°C,gte_c,21.5°C,0.014,0.05,0.036,SKIP,NO,,0.0
+Chongqing,2026-04-13,14°C,lte_c,22.5°C,0.021,0.05,0.03,SKIP,NO,,0.0
+Chongqing,2026-04-13,15°C,exact_c,22.5°C,0.011,0.02,0.009,SKIP,NO,,0.0
+Chongqing,2026-04-13,16°C,exact_c,22.5°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Chongqing,2026-04-13,17°C,exact_c,22.5°C,0.022,0.02,-0.002,SKIP,NO,,0.0
+Chongqing,2026-04-13,18°C,exact_c,22.5°C,0.054,0.02,-0.034,SKIP,NO,,0.0
+Chongqing,2026-04-13,19°C,exact_c,22.5°C,0.12,0.02,-0.1,BUY NO,NO,True,12.0
+Chongqing,2026-04-13,20°C,exact_c,22.5°C,0.31,0.02,-0.29,BUY NO,NO,True,31.0
+Chongqing,2026-04-13,21°C,exact_c,22.5°C,0.27,0.02,-0.25,BUY NO,NO,True,27.0
+Chongqing,2026-04-13,22°C,exact_c,22.5°C,0.19,0.1,-0.09,BUY NO,NO,True,19.0
+Chongqing,2026-04-13,23°C,exact_c,22.5°C,0.115,0.1,-0.015,SKIP,NO,,0.0
+Chongqing,2026-04-13,24°C,gte_c,22.5°C,0.028,0.05,0.023,SKIP,NO,,0.0
+Dallas,2026-04-13,82°F,gte_f,28.2°C,0.745,0.55,-0.195,BUY NO,YES,False,-25.5
+Sao Paulo,2026-04-13,18°C,lte_c,27.5°C,0.011,0.05,0.04,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,19°C,exact_c,27.5°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,20°C,exact_c,27.5°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,21°C,exact_c,27.5°C,0.071,0.02,-0.051,BUY NO,NO,True,7.15
+Sao Paulo,2026-04-13,22°C,exact_c,27.5°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,23°C,exact_c,27.5°C,0.012,0.02,0.008,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,24°C,exact_c,27.5°C,0.034,0.02,-0.014,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,25°C,exact_c,27.5°C,0.046,0.02,-0.026,SKIP,NO,,0.0
+Sao Paulo,2026-04-13,26°C,exact_c,27.5°C,0.21,0.02,-0.19,BUY NO,NO,True,21.0
+Sao Paulo,2026-04-13,27°C,exact_c,27.5°C,0.315,0.1,-0.215,BUY NO,NO,True,31.5
+Sao Paulo,2026-04-13,28°C,gte_c,27.5°C,0.45,0.05,-0.4,BUY NO,YES,False,-55.0
+Toronto,2026-04-13,14°C,lte_c,21.0°C,0.013,0.05,0.037,SKIP,NO,,0.0
+Toronto,2026-04-13,15°C,exact_c,21.0°C,0.013,0.02,0.007,SKIP,NO,,0.0
+Toronto,2026-04-13,16°C,exact_c,21.0°C,0.018,0.02,0.002,SKIP,NO,,0.0
+Toronto,2026-04-13,17°C,exact_c,21.0°C,0.047,0.02,-0.027,SKIP,NO,,0.0
+Toronto,2026-04-13,18°C,exact_c,21.0°C,0.03,0.02,-0.01,SKIP,NO,,0.0
+Toronto,2026-04-13,19°C,exact_c,21.0°C,0.215,0.02,-0.195,BUY NO,NO,True,21.5
+Toronto,2026-04-13,20°C,exact_c,21.0°C,0.268,0.1,-0.168,BUY NO,NO,True,26.75
+Toronto,2026-04-13,21°C,exact_c,21.0°C,0.205,0.9,0.695,BUY YES,YES,True,79.5
+Toronto,2026-04-13,22°C,exact_c,21.0°C,0.195,0.1,-0.095,BUY NO,NO,True,19.5
+Toronto,2026-04-13,23°C,exact_c,21.0°C,0.046,0.02,-0.026,SKIP,NO,,0.0
+Toronto,2026-04-13,24°C,gte_c,21.0°C,0.04,0.05,0.011,SKIP,NO,,0.0
+Taipei,2026-04-13,28°C,lte_c,30.7°C,0.115,0.05,-0.065,BUY NO,NO,True,11.5
+Taipei,2026-04-13,29°C,exact_c,30.7°C,0.165,0.02,-0.145,BUY NO,NO,True,16.5
+Taipei,2026-04-13,30°C,exact_c,30.7°C,0.18,0.1,-0.08,BUY NO,NO,True,18.0
+Taipei,2026-04-13,31°C,exact_c,30.7°C,0.24,0.9,0.66,BUY YES,YES,True,76.0
+Taipei,2026-04-13,32°C,exact_c,30.7°C,0.365,0.1,-0.265,BUY NO,NO,True,36.5
+Taipei,2026-04-13,33°C,exact_c,30.7°C,0.088,0.02,-0.068,BUY NO,NO,True,8.85
+Taipei,2026-04-13,34°C,exact_c,30.7°C,0.036,0.02,-0.016,SKIP,NO,,0.0
+Taipei,2026-04-13,35°C,exact_c,30.7°C,0.076,0.02,-0.056,BUY NO,NO,True,7.65
+Taipei,2026-04-13,36°C,exact_c,30.7°C,0.016,0.02,0.004,SKIP,NO,,0.0
+Taipei,2026-04-13,37°C,exact_c,30.7°C,0.021,0.02,-0.001,SKIP,NO,,0.0
+Taipei,2026-04-13,38°C,gte_c,30.7°C,0.015,0.05,0.035,SKIP,NO,,0.0
+Seattle,2026-04-13,45°F,lte_f,12.1°C,0.015,0.05,0.036,SKIP,NO,,0.0
+Seattle,2026-04-13,64°F,gte_f,12.1°C,0.019,0.05,0.031,SKIP,NO,,0.0
