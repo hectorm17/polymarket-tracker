@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import feedparser
 import ssl
-import re
 import time
 from datetime import date, datetime, timezone
 from supabase import create_client
@@ -19,7 +18,7 @@ TICKERS = {
     "US": ["SPY", "QQQ", "AAPL", "NVDA", "TSLA"],
     "EU": ["^FCHI", "MC.PA", "RMS.PA", "AIR.PA", "TTE.PA"],
     "Forex": ["EURUSD=X", "DX-Y.NYB", "JPY=X"],
-    "Macro": ["^TNX", "GC=F", "CL=F"],
+    "Macro": ["^VIX", "^TNX", "GC=F", "CL=F"],
 }
 
 TICKER_LABELS = {
@@ -27,20 +26,21 @@ TICKER_LABELS = {
     "SPY": "SPY", "QQQ": "QQQ", "AAPL": "Apple", "NVDA": "Nvidia", "TSLA": "Tesla",
     "^FCHI": "CAC 40", "MC.PA": "LVMH", "RMS.PA": "Hermès", "AIR.PA": "Airbus", "TTE.PA": "TotalEnergies",
     "EURUSD=X": "EUR/USD", "DX-Y.NYB": "DXY", "JPY=X": "USD/JPY",
-    "^TNX": "US 10Y", "GC=F": "Gold", "CL=F": "Oil WTI",
+    "^VIX": "VIX", "^TNX": "US 10Y", "GC=F": "Or", "CL=F": "Pétrole WTI",
 }
 
 FEEDS = {
-    "BFM Business": "https://www.bfmtv.com/rss/economie/",
-    "Reuters": "https://news.google.com/rss/search?q=site:reuters.com+markets+economy&hl=en-US",
-    "Les Echos": "https://news.google.com/rss/search?q=site:lesechos.fr+bourse+march%C3%A9&hl=fr-FR",
-    "Investing.com": "https://www.investing.com/rss/news.rss",
-    "CoinDesk": "https://news.google.com/rss/search?q=site:coindesk.com+crypto+bitcoin&hl=en-US",
+    "Reuters": "https://news.google.com/rss/search?q=site:reuters.com+markets+economy&hl=en-US&gl=US&ceid=US:en",
+    "Bloomberg": "https://news.google.com/rss/search?q=site:bloomberg.com+markets&hl=en-US&gl=US&ceid=US:en",
+    "FT": "https://www.ft.com/rss/home/uk",
+    "WSJ": "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines",
+    "Les Echos": "https://news.google.com/rss/search?q=site:lesechos.fr+bourse+finance+march%C3%A9&hl=fr-FR&gl=FR&ceid=FR:fr",
+    "CoinDesk": "https://news.google.com/rss/search?q=site:coindesk.com+crypto+bitcoin&hl=en-US&gl=US&ceid=US:en",
     "ZeroHedge": "https://feeds.feedburner.com/zerohedge/feed",
+    "Seeking Alpha": "https://seekingalpha.com/market_currents.xml",
     "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
 }
 
-# Keywords that trigger BREAKING detection
 BREAKING_KEYWORDS = [
     "hermès", "hermes", "lvmh", "apple", "nvidia", "tesla", "airbus", "total",
     "bitcoin", "btc", "ethereum", "eth", "solana",
@@ -48,6 +48,7 @@ BREAKING_KEYWORDS = [
     "trump", "tarif", "tariff", "inflation", "cpi", "recession",
     "taux", "rate", "war", "guerre", "sanctions", "iran", "china", "chine",
     "crash", "rallye", "rally", "sell-off", "selloff", "plunge", "surge",
+    "vix", "volatil", "pétrole", "oil", "gold", "or ",
 ]
 
 # ─────────────────────────────────────────────
@@ -131,22 +132,10 @@ def fetch_all_news():
                 pub = e.get("published_parsed")
                 ts = datetime(*pub[:6], tzinfo=timezone.utc) if pub else None
                 title = e.get("title", "")
-                # Detect breaking keywords
                 title_lower = title.lower()
                 is_breaking = any(kw in title_lower for kw in BREAKING_KEYWORDS)
-                # Detect matched tickers
-                matched = [
-                    lbl for lbl in TICKER_LABELS.values()
-                    if lbl.lower() in title_lower or lbl.upper() in title
-                ]
-                items.append({
-                    "title": title,
-                    "source": source,
-                    "link": e.get("link", ""),
-                    "time": ts,
-                    "breaking": is_breaking,
-                    "tickers": matched,
-                })
+                matched = [lbl for lbl in TICKER_LABELS.values() if lbl.lower() in title_lower or lbl.upper() in title]
+                items.append({"title": title, "source": source, "link": e.get("link", ""), "time": ts, "breaking": is_breaking, "tickers": matched})
         except Exception:
             continue
     items.sort(key=lambda x: x["time"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
@@ -190,6 +179,8 @@ def fmt_price(p, sym=""):
         return f"${p:.4f}"
     if "TNX" in sym:
         return f"{p:.2f}%"
+    if "VIX" in sym:
+        return f"{p:.1f}"
     if p >= 1000:
         return f"${p:,.0f}"
     if p >= 1:
@@ -206,6 +197,7 @@ for key, default in {
     "alert_threshold": 100.0,
     "analyses": [],
     "daily_summaries": [],
+    "auto_analysis_done": False,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -220,70 +212,25 @@ st.markdown("""
 <style>
     .block-container { padding-top: 2rem; }
     div[data-testid="stMetric"] {
-        background: #111827;
-        border: 1px solid #1f2937;
-        border-radius: 0.75rem;
-        padding: 0.75rem;
+        background: #111827; border: 1px solid #1f2937;
+        border-radius: 0.75rem; padding: 0.75rem;
     }
     div[data-testid="stMetric"] label { color: #9ca3af; font-size: 0.8rem; }
-    .alert-item {
-        padding: 0.5rem 0.75rem;
-        border-left: 3px solid #6366f1;
-        background: #111827;
-        border-radius: 0 0.5rem 0.5rem 0;
-        margin-bottom: 0.4rem;
-        font-size: 0.85rem;
-    }
+    .alert-item { padding: 0.5rem 0.75rem; border-left: 3px solid #6366f1; background: #111827; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.4rem; font-size: 0.85rem; }
     .alert-time { color: #6b7280; font-size: 0.75rem; }
-    .news-item {
-        padding: 0.6rem 0.75rem;
-        border-bottom: 1px solid #1f2937;
-        font-size: 0.9rem;
-    }
-    .news-breaking {
-        padding: 0.6rem 0.75rem;
-        border-left: 3px solid #ef4444;
-        background: #1c0a0a;
-        border-bottom: 1px solid #1f2937;
-        font-size: 0.9rem;
-    }
+    .news-item { padding: 0.6rem 0.75rem; border-bottom: 1px solid #1f2937; font-size: 0.9rem; }
+    .news-breaking { padding: 0.6rem 0.75rem; border-left: 3px solid #ef4444; background: #1c0a0a; border-bottom: 1px solid #1f2937; font-size: 0.9rem; }
     .news-source { color: #6366f1; font-size: 0.75rem; font-weight: 600; }
     .news-time { color: #6b7280; font-size: 0.75rem; }
-    .badge-breaking {
-        display: inline-block;
-        background: #dc2626;
-        color: white;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 0.1rem 0.4rem;
-        border-radius: 0.25rem;
-        margin-right: 0.4rem;
-        vertical-align: middle;
-    }
-    .badge-ticker {
-        display: inline-block;
-        background: #312e81;
-        color: #a5b4fc;
-        font-size: 0.65rem;
-        font-weight: 600;
-        padding: 0.1rem 0.4rem;
-        border-radius: 0.25rem;
-        margin-right: 0.3rem;
-        vertical-align: middle;
-    }
-    .signal-box {
-        padding: 1.2rem 1.5rem;
-        border-radius: 0.75rem;
-        font-size: 1.3rem;
-        font-weight: 700;
-        text-align: center;
-        margin: 0.5rem 0 1rem 0;
-    }
+    .badge-breaking { display: inline-block; background: #dc2626; color: white; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-right: 0.4rem; vertical-align: middle; }
+    .badge-ticker { display: inline-block; background: #312e81; color: #a5b4fc; font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-right: 0.3rem; vertical-align: middle; }
+    .signal-box { padding: 1.2rem 1.5rem; border-radius: 0.75rem; font-size: 1.3rem; font-weight: 700; text-align: center; margin: 0.5rem 0 1rem 0; }
     .signal-risk-off { background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
     .signal-risk-on { background: #052e16; border: 1px solid #16a34a; color: #86efac; }
     .signal-neutral { background: #1c1917; border: 1px solid #a16207; color: #fde68a; }
     .fg-bar-bg { background: #1f2937; border-radius: 0.5rem; height: 1.2rem; width: 100%; overflow: hidden; }
     .fg-bar-fill { height: 100%; border-radius: 0.5rem; transition: width 0.5s; }
+    .analysis-box { background: #0f172a; border: 1px solid #1e3a5f; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -296,7 +243,7 @@ st.title("📊 Polymarket Wallet Tracker")
 main_tab_wallets, main_tab_analyst = st.tabs(["💰 Wallets", "🤖 Analyste IA"])
 
 # ═════════════════════════════════════════════
-# TAB 1: WALLETS (unchanged)
+# TAB 1: WALLETS
 # ═════════════════════════════════════════════
 
 with main_tab_wallets:
@@ -309,11 +256,7 @@ with main_tab_wallets:
         )
         if st.session_state.alerts:
             for a in st.session_state.alerts:
-                st.markdown(
-                    f'<div class="alert-item">{a["msg"]}<br/>'
-                    f'<span class="alert-time">{a["time"]}</span></div>',
-                    unsafe_allow_html=True,
-                )
+                st.markdown(f'<div class="alert-item">{a["msg"]}<br/><span class="alert-time">{a["time"]}</span></div>', unsafe_allow_html=True)
         else:
             st.caption("No alerts yet — new trades will appear here.")
 
@@ -340,13 +283,7 @@ with main_tab_wallets:
 
     if not wallets:
         st.divider()
-        st.markdown(
-            "<div style='text-align:center; padding:4rem 0; color:#6b7280;'>"
-            "<p style='font-size:1.2rem;'>No wallets tracked yet</p>"
-            "<p>Add a Polymarket proxy wallet address above to get started</p>"
-            "</div>",
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div style="text-align:center; padding:4rem 0; color:#6b7280;"><p style="font-size:1.2rem;">No wallets tracked yet</p><p>Add a Polymarket proxy wallet address above to get started</p></div>', unsafe_allow_html=True)
     else:
         for wallet in wallets:
             addr = wallet["address"]
@@ -382,7 +319,7 @@ with main_tab_wallets:
             mcol1.metric("Total P&L", f"${total_pnl:+,.2f}")
             mcol2.metric("Win Rate", f"{win_rate:.1f}%")
             mcol3.metric("Open Positions", len(active_positions))
-            tab_pos, tab_trades = st.tabs([f"📈 Positions ({len(active_positions)})", f"🔄 Recent Trades ({len(trades)})"])
+            tab_pos, tab_trades = st.tabs([f"📈 Positions ({len(active_positions)})", f"🔄 Trades ({len(trades)})"])
             with tab_pos:
                 if not active_positions:
                     st.info("No open positions")
@@ -431,7 +368,6 @@ with main_tab_wallets:
             if new_alerts:
                 st.session_state.alerts = (new_alerts + st.session_state.alerts)[:20]
         poll_alerts()
-
         st.divider()
         if st.button("🔄 Refresh all data", use_container_width=True, key="refresh_wallets"):
             st.cache_data.clear()
@@ -443,21 +379,153 @@ with main_tab_wallets:
 
 with main_tab_analyst:
 
-    # ── Live header ──
     now_str = datetime.now().strftime("%H:%M:%S")
-    hdr1, hdr2 = st.columns([6, 1])
-    hdr1.markdown(f"🔴 **LIVE** &nbsp; Dernière MAJ : `{now_str}`")
-    if hdr2.button("⟳ Refresh", key="refresh_analyst", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
 
-    # ── Fetch all data ──
+    # ── Fetch all data upfront ──
     all_prices = fetch_all_prices()
     fg = fetch_fear_greed()
     all_news = fetch_all_news()
 
-    # ─── PRIX PAR CATÉGORIE (tabs) ───
-    st.markdown("#### Prix clés")
+    has_api_key = "ANTHROPIC_API_KEY" in st.secrets
+
+    # ── Build context for AI ──
+    def build_full_context():
+        lines = ["DONNÉES MARCHÉ :"]
+        for cat, syms in TICKERS.items():
+            for sym in syms:
+                d = all_prices.get(sym, {"price": 0, "change": 0, "label": sym})
+                lines.append(f"  {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)")
+        # Macro indicators block
+        vix = all_prices.get("^VIX", {"price": 0, "change": 0})
+        tnx = all_prices.get("^TNX", {"price": 0, "change": 0})
+        gold = all_prices.get("GC=F", {"price": 0, "change": 0})
+        oil = all_prices.get("CL=F", {"price": 0, "change": 0})
+        dxy = all_prices.get("DX-Y.NYB", {"price": 0, "change": 0})
+        lines.append(f"\nINDICATEURS MACRO :")
+        lines.append(f"  VIX : {vix['price']:.1f} ({vix['change']:+.2f}%)")
+        lines.append(f"  Taux 10 ans US : {tnx['price']:.2f}% ({tnx['change']:+.2f}%)")
+        lines.append(f"  Or : ${gold['price']:,.0f} ({gold['change']:+.2f}%)")
+        lines.append(f"  Pétrole WTI : ${oil['price']:.2f} ({oil['change']:+.2f}%)")
+        lines.append(f"  DXY : {dxy['price']:.2f} ({dxy['change']:+.2f}%)")
+        lines.append(f"  Fear & Greed : {fg['value']} — {fg['label']}")
+        breaking = [n for n in all_news if n["breaking"]]
+        normal = [n for n in all_news if not n["breaking"]]
+        top_news = (breaking + normal)[:10]
+        lines.append(f"\nDERNIÈRES NEWS ({len(top_news)}) :")
+        for n in top_news:
+            prefix = "[BREAKING] " if n["breaking"] else ""
+            lines.append(f"  - {prefix}[{n['source']}] {n['title']} ({time_ago(n['time'])})")
+        return "\n".join(lines)
+
+    SYSTEM_PROMPT = """Tu es un analyste financier senior. Tu couvres crypto, actions US et EU, forex et macro.
+
+À partir des données marché et news fournies, génère systématiquement :
+1. SIGNAL global (RISK ON 🟢 / RISK OFF 🔴 / NEUTRE ⚠️) en une phrase
+2. CONTEXTE macro en 2 phrases max
+3. 2 à 3 OPPORTUNITÉS ou ALERTES concrètes sur des actifs spécifiques, chacune avec :
+   - Le nom de l'actif et sa variation
+   - 1 phrase de justification basée sur les données
+   - 1 recommandation directe (long / short / attendre / surveiller)
+
+Sois direct et actionnable. Pas de disclaimer. Pas de 'il faudrait considérer'. Réponds en français."""
+
+    def run_global_analysis():
+        """Run Claude analysis and store in session_state."""
+        context = build_full_context()
+        try:
+            from anthropic import Anthropic
+            client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+            resp = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1200,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": f"{context}\n\nGénère ton analyse."}],
+            )
+            text = resp.content[0].text
+            st.session_state.analyses.append({"time": now_str, "text": text})
+            st.session_state.analyses = st.session_state.analyses[-24:]
+            return text
+        except Exception as e:
+            return f"Erreur Claude API : {e}"
+
+    # ──────────────────────────────────────────
+    # SECTION 1: ANALYSE IA (TOP OF PAGE)
+    # ──────────────────────────────────────────
+
+    st.markdown("#### 🤖 Analyse IA")
+
+    if not has_api_key:
+        st.warning("Ajoute `ANTHROPIC_API_KEY` dans tes secrets Streamlit pour activer l'analyse IA.")
+    else:
+        # Auto-generate on first load
+        if not st.session_state.auto_analysis_done and not st.session_state.analyses:
+            with st.spinner("Génération de l'analyse initiale..."):
+                run_global_analysis()
+            st.session_state.auto_analysis_done = True
+
+        # Display latest analysis
+        if st.session_state.analyses:
+            latest = st.session_state.analyses[-1]
+            text = latest["text"]
+            text_lower = text.lower()
+
+            # Signal box
+            if "risk off" in text_lower:
+                st.markdown('<div class="signal-box signal-risk-off">🔴 RISK OFF</div>', unsafe_allow_html=True)
+            elif "risk on" in text_lower:
+                st.markdown('<div class="signal-box signal-risk-on">🟢 RISK ON</div>', unsafe_allow_html=True)
+            elif "neutre" in text_lower:
+                st.markdown('<div class="signal-box signal-neutral">⚠️ NEUTRE</div>', unsafe_allow_html=True)
+
+            st.markdown(f'<div class="analysis-box">', unsafe_allow_html=True)
+            st.caption(f"Générée à {latest['time']}")
+            st.markdown(text)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Regenerate button
+        acol1, acol2 = st.columns(2)
+        if acol1.button("🔄 Régénérer l'analyse", use_container_width=True, key="regen_analysis"):
+            with st.spinner("Claude analyse les marchés..."):
+                run_global_analysis()
+            st.rerun()
+        if acol2.button("📋 Résumé du jour", use_container_width=True, key="gen_summary"):
+            if not st.session_state.analyses:
+                st.warning("Aucune analyse à résumer.")
+            else:
+                all_a = "\n\n---\n\n".join(f"[{a['time']}]\n{a['text']}" for a in st.session_state.analyses)
+                with st.spinner("Génération du résumé..."):
+                    try:
+                        from anthropic import Anthropic
+                        client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+                        resp = client.messages.create(
+                            model="claude-sonnet-4-20250514", max_tokens=1500,
+                            system="Tu es un analyste macro senior. Produis un résumé quotidien : 1) SYNTHÈSE DU JOUR 2) ÉVÉNEMENTS CLÉS 3) ÉVOLUTION DU SENTIMENT 4) SIGNAL DE FIN DE JOURNÉE. Réponds en français.",
+                            messages=[{"role": "user", "content": f"Analyses de la journée :\n\n{all_a}"}],
+                        )
+                        st.session_state.daily_summaries.append({"date": date.today().isoformat(), "time": now_str, "text": resp.content[0].text})
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
+
+        if st.session_state.daily_summaries:
+            for s in reversed(st.session_state.daily_summaries):
+                with st.expander(f"📋 Résumé du {s['date']} ({s['time']})"):
+                    st.markdown(s["text"])
+
+    st.divider()
+
+    # ──────────────────────────────────────────
+    # SECTION 2: LIVE HEADER + PRICES
+    # ──────────────────────────────────────────
+
+    hdr1, hdr2 = st.columns([6, 1])
+    hdr1.markdown(f"🔴 **LIVE** &nbsp; Dernière MAJ : `{now_str}`")
+    if hdr2.button("⟳ Refresh", key="refresh_analyst", use_container_width=True):
+        st.cache_data.clear()
+        st.session_state.auto_analysis_done = False
+        st.rerun()
+
+    # Prices by category
     cat_tabs = st.tabs(list(TICKERS.keys()))
     for cat_tab, (cat_name, syms) in zip(cat_tabs, TICKERS.items()):
         with cat_tab:
@@ -466,7 +534,7 @@ with main_tab_analyst:
                 d = all_prices.get(sym, {"price": 0, "change": 0, "label": sym})
                 col.metric(d["label"], fmt_price(d["price"], sym), f"{d['change']:+.2f}%")
 
-    # ─── FEAR & GREED ───
+    # Fear & Greed
     fg_val = fg["value"]
     fg_label = fg["label"]
     if fg_val <= 25:
@@ -481,21 +549,20 @@ with main_tab_analyst:
         fg_color, fg_emoji = "#16a34a", "🤑"
 
     st.markdown(f"**Fear & Greed** : {fg_val} — {fg_label} {fg_emoji}")
-    st.markdown(
-        f'<div class="fg-bar-bg"><div class="fg-bar-fill" style="width:{fg_val}%; background:{fg_color};"></div></div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="fg-bar-bg"><div class="fg-bar-fill" style="width:{fg_val}%; background:{fg_color};"></div></div>', unsafe_allow_html=True)
 
     st.divider()
 
-    # ─── FLUX NEWS ───
+    # ──────────────────────────────────────────
+    # SECTION 3: NEWS FEED
+    # ──────────────────────────────────────────
+
     st.markdown("#### 📰 Flux news live")
 
     fcol1, fcol2 = st.columns(2)
     filter_ticker = fcol1.text_input("Filtre ticker", placeholder="ex: Hermès, Bitcoin, Fed...", key="filter_ticker", label_visibility="collapsed")
     filter_kw = fcol2.text_input("Filtre mot-clé", placeholder="mot-clé...", key="filter_kw", label_visibility="collapsed")
 
-    # Apply filters
     filtered_news = all_news
     if filter_ticker.strip():
         ft = filter_ticker.strip().lower()
@@ -504,13 +571,9 @@ with main_tab_analyst:
         fk = filter_kw.strip().lower()
         filtered_news = [n for n in filtered_news if fk in n["title"].lower()]
 
-    # Separate breaking from normal
     breaking = [n for n in filtered_news if n["breaking"]]
     normal = [n for n in filtered_news if not n["breaking"]]
 
-    has_api_key = "ANTHROPIC_API_KEY" in st.secrets
-
-    # Display news with "Analyser IA" buttons
     for idx, item in enumerate((breaking + normal)[:25]):
         is_brk = item["breaking"]
         css_class = "news-breaking" if is_brk else "news-item"
@@ -519,20 +582,13 @@ with main_tab_analyst:
             badges += '<span class="badge-breaking">BREAKING</span>'
         for t in item.get("tickers", []):
             badges += f'<span class="badge-ticker">{t}</span>'
-
         ago = time_ago(item["time"])
 
-        st.markdown(
-            f'<div class="{css_class}">'
-            f'{badges}{item["title"]}<br/>'
-            f'<span class="news-source">{item["source"]}</span> · <span class="news-time">{ago}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(f'<div class="{css_class}">{badges}{item["title"]}<br/><span class="news-source">{item["source"]}</span> · <span class="news-time">{ago}</span></div>', unsafe_allow_html=True)
 
-        # "Analyser IA" button for each news
+        # Per-article AI analysis button
         if has_api_key and (is_brk or item.get("tickers")):
-            if st.button(f"🧠 Analyser ce titre IA", key=f"analyze_news_{idx}", type="secondary"):
+            if st.button("🧠 Analyser ce titre IA", key=f"analyze_news_{idx}", type="secondary"):
                 ticker_match = item["tickers"][0] if item["tickers"] else None
                 ticker_price_info = ""
                 if ticker_match:
@@ -540,8 +596,8 @@ with main_tab_analyst:
                         if d["label"] == ticker_match:
                             ticker_price_info = f"Prix actuel {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)"
                             break
-
-                fg_summary = f"Fear & Greed: {fg_val} ({fg_label})"
+                vix_info = all_prices.get("^VIX", {"price": 0})
+                fg_summary = f"Fear & Greed: {fg_val} ({fg_label}), VIX: {vix_info['price']:.1f}"
                 macro_summary = f"BTC {all_prices.get('BTC-USD',{}).get('change',0):+.1f}%, SPY {all_prices.get('SPY',{}).get('change',0):+.1f}%, DXY {all_prices.get('DX-Y.NYB',{}).get('change',0):+.1f}%"
 
                 user_msg = f"""News détectée{f' sur {ticker_match}' if ticker_match else ''} :
@@ -551,116 +607,18 @@ Source : {item['source']}, publié {ago}
 Contexte macro : {macro_summary}. {fg_summary}.
 Question : trade à envisager ? Si oui, dans quel sens, à quel niveau, quel stop ?"""
 
-                with st.spinner(f"Analyse de \"{item['title'][:50]}...\""):
+                with st.spinner(f"Analyse en cours..."):
                     try:
                         from anthropic import Anthropic
                         client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
                         resp = client.messages.create(
-                            model="claude-sonnet-4-20250514",
-                            max_tokens=800,
-                            system="Tu es un analyste macro senior couvrant crypto, actions US/EU et forex. Sois direct, concis, actionnable. Pas de disclaimer. Donne des niveaux précis si pertinent. Réponds en français.",
+                            model="claude-sonnet-4-20250514", max_tokens=800,
+                            system="Tu es un analyste financier senior couvrant crypto, actions US/EU et forex. Sois direct, concis, actionnable. Pas de disclaimer. Donne des niveaux précis si pertinent. Réponds en français.",
                             messages=[{"role": "user", "content": user_msg}],
                         )
                         st.info(resp.content[0].text)
                     except Exception as e:
                         st.error(f"Erreur : {e}")
-
-    st.divider()
-
-    # ─── ANALYSE IA GLOBALE ───
-    st.markdown("#### 🤖 Analyse IA globale")
-
-    if not has_api_key:
-        st.warning("Ajoute `ANTHROPIC_API_KEY` dans tes secrets Streamlit pour activer l'analyse IA.")
-    else:
-        def build_full_context():
-            lines = ["=== PRIX MARCHÉS ==="]
-            for cat, syms in TICKERS.items():
-                cat_line = f"\n[{cat}]"
-                for sym in syms:
-                    d = all_prices.get(sym, {"price": 0, "change": 0, "label": sym})
-                    cat_line += f"  {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)"
-                lines.append(cat_line)
-            lines.append(f"\n=== FEAR & GREED INDEX ===\n{fg_val} — {fg_label}")
-            lines.append("\n=== DERNIÈRES NEWS ===")
-            for item in (breaking + normal)[:12]:
-                prefix = "[BREAKING] " if item["breaking"] else ""
-                lines.append(f"- {prefix}[{item['source']}] {item['title']} ({time_ago(item['time'])})")
-            return "\n".join(lines)
-
-        SYSTEM_PROMPT = """Tu es un analyste macro senior couvrant crypto, actions US/EU et forex.
-Sois direct, concis, actionnable. Pas de disclaimer.
-Structure ta réponse :
-1. SIGNAL : RISK ON 🟢 / RISK OFF 🔴 / NEUTRE ⚠️
-2. CONTEXTE (2-3 phrases sur le sentiment global)
-3. POINTS D'ATTENTION (3 bullets max sur les signaux importants)
-4. NIVEAUX CLÉS si pertinent (supports/résistances à surveiller)
-Réponds en français."""
-
-        acol1, acol2 = st.columns(2)
-        analyze_global = acol1.button("🧠 Analyser maintenant", use_container_width=True, key="analyze_global")
-        gen_summary = acol2.button("📋 Résumé du jour", use_container_width=True, key="gen_summary")
-
-        if analyze_global:
-            context = build_full_context()
-            with st.spinner("Claude analyse les marchés..."):
-                try:
-                    from anthropic import Anthropic
-                    client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-                    resp = client.messages.create(
-                        model="claude-sonnet-4-20250514",
-                        max_tokens=1200,
-                        system=SYSTEM_PROMPT,
-                        messages=[{"role": "user", "content": f"Données live à {now_str} :\n\n{context}\n\nDonne ton analyse."}],
-                    )
-                    text = resp.content[0].text
-                    st.session_state.analyses.append({"time": now_str, "text": text})
-                    st.session_state.analyses = st.session_state.analyses[-24:]
-                except Exception as e:
-                    st.error(f"Erreur Claude API : {e}")
-
-        if gen_summary:
-            if not st.session_state.analyses:
-                st.warning("Aucune analyse à résumer. Clique d'abord sur 'Analyser maintenant'.")
-            else:
-                all_analyses = "\n\n---\n\n".join(f"[{a['time']}]\n{a['text']}" for a in st.session_state.analyses)
-                with st.spinner("Génération du résumé..."):
-                    try:
-                        from anthropic import Anthropic
-                        client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-                        resp = client.messages.create(
-                            model="claude-sonnet-4-20250514",
-                            max_tokens=1500,
-                            system="Tu es un analyste macro senior. Produis un résumé quotidien : 1) SYNTHÈSE DU JOUR 2) ÉVÉNEMENTS CLÉS 3) ÉVOLUTION DU SENTIMENT 4) SIGNAL DE FIN DE JOURNÉE. Réponds en français.",
-                            messages=[{"role": "user", "content": f"Analyses de la journée :\n\n{all_analyses}"}],
-                        )
-                        st.session_state.daily_summaries.append({"date": date.today().isoformat(), "time": now_str, "text": resp.content[0].text})
-                    except Exception as e:
-                        st.error(f"Erreur : {e}")
-
-        # Display latest analysis
-        if st.session_state.analyses:
-            latest = st.session_state.analyses[-1]
-            text = latest["text"]
-            text_lower = text.lower()
-
-            if "risk off" in text_lower:
-                st.markdown('<div class="signal-box signal-risk-off">🔴 RISK OFF</div>', unsafe_allow_html=True)
-            elif "risk on" in text_lower:
-                st.markdown('<div class="signal-box signal-risk-on">🟢 RISK ON</div>', unsafe_allow_html=True)
-            elif "neutre" in text_lower:
-                st.markdown('<div class="signal-box signal-neutral">⚠️ NEUTRE</div>', unsafe_allow_html=True)
-
-            st.markdown(f"*Analyse de {latest['time']}*")
-            st.markdown(text)
-
-        # Daily summaries
-        if st.session_state.daily_summaries:
-            st.divider()
-            st.markdown("##### 📋 Résumés quotidiens")
-            for s in reversed(st.session_state.daily_summaries):
-                with st.expander(f"Résumé du {s['date']} ({s['time']})"):
-                    st.markdown(s["text"])
 
     # ── Auto-refresh every 60s ──
     @st.fragment(run_every=60)
