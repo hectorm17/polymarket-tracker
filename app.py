@@ -126,19 +126,30 @@ else:
             st.error(f"Failed to fetch data for {lbl}: {e}")
             continue
 
-        # ── Stats ──
-        wins = [t for t in trades if (t.get("side", "").upper() == "BUY" and float(t.get("price", 1)) < 0.5) or (t.get("side", "").upper() == "SELL" and float(t.get("price", 0)) > 0.5)]
-        win_rate = (len(wins) / len(trades) * 100) if trades else 0
+        # ── Filter active vs closed positions ──
+        from datetime import date
+        today = date.today()
+        active_positions = []
+        closed_positions = []
+        for p in positions:
+            end = p.get("endDate")
+            try:
+                is_active = date.fromisoformat(end) >= today if end else True
+            except (ValueError, TypeError):
+                is_active = True
+            if is_active:
+                active_positions.append(p)
+            else:
+                closed_positions.append(p)
 
+        # ── Win rate on closed positions only ──
+        wins = [p for p in closed_positions if float(p.get("cashPnl", 0)) + float(p.get("realizedPnl", 0)) > 0]
+        win_rate = (len(wins) / len(closed_positions) * 100) if closed_positions else 0
+
+        # ── Stats ──
         mcol1, mcol2, mcol3 = st.columns(3)
-        mcol1.metric("Total P&L", f"${total_pnl:+.2f}")
+        mcol1.metric("Total P&L", f"${total_pnl:+,.2f}")
         mcol2.metric("Win Rate", f"{win_rate:.1f}%")
-        from datetime import datetime, timezone
-        active_positions = [
-            p for p in positions
-            if float(p.get("curPrice", 0)) > 0
-            or (p.get("endDate") and datetime.fromisoformat(p["endDate"].replace("Z", "+00:00")) > datetime.now(timezone.utc))
-        ]
         mcol3.metric("Open Positions", len(active_positions))
 
         # ── Tabs ──
