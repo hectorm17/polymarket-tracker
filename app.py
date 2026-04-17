@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import time
+from datetime import date, datetime
 from supabase import create_client
 
 # ── Supabase setup ──
@@ -14,6 +16,7 @@ db = get_supabase()
 
 # ── Polymarket API helpers ──
 DATA_API = "https://data-api.polymarket.com"
+LB_API = "https://lb-api.polymarket.com"
 
 @st.cache_data(ttl=60)
 def fetch_positions(address):
@@ -27,7 +30,11 @@ def fetch_trades(address):
     r.raise_for_status()
     return r.json()
 
-LB_API = "https://lb-api.polymarket.com"
+def fetch_recent_trades(address):
+    """No cache — used by the alert poller to get fresh trades."""
+    r = requests.get(f"{DATA_API}/trades", params={"user": address.lower(), "limit": 5}, timeout=15)
+    r.raise_for_status()
+    return r.json()
 
 @st.cache_data(ttl=60)
 def fetch_pnl(address):
@@ -49,6 +56,14 @@ def add_wallet(address, label):
 def remove_wallet(address):
     db.table("wallets").delete().eq("address", address.lower()).execute()
 
+# ── Session state init ──
+if "alerts" not in st.session_state:
+    st.session_state.alerts = []
+if "last_trade_ts" not in st.session_state:
+    st.session_state.last_trade_ts = {}
+if "alert_threshold" not in st.session_state:
+    st.session_state.alert_threshold = 100.0
+
 # ── Page config ──
 st.set_page_config(page_title="Polymarket Tracker", page_icon="📊", layout="wide")
 
@@ -62,11 +77,36 @@ st.markdown("""
         padding: 1rem;
     }
     div[data-testid="stMetric"] label { color: #9ca3af; }
+    .alert-item {
+        padding: 0.5rem 0.75rem;
+        border-left: 3px solid #6366f1;
+        background: #111827;
+        border-radius: 0 0.5rem 0.5rem 0;
+        margin-bottom: 0.4rem;
+        font-size: 0.85rem;
+    }
+    .alert-time { color: #6b7280; font-size: 0.75rem; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("📊 Polymarket Wallet Tracker")
 st.caption("Track positions, trades & P&L across proxy wallets")
+
+# ── Alert settings + panel ──
+with st.expander("🔔 Alerts", expanded=bool(st.session_state.alerts)):
+    st.session_state.alert_threshold = st.number_input(
+        "Min trade size (USDC)", min_value=0.0, value=st.session_state.alert_threshold,
+        step=10.0, help="Only alert for trades above this amount",
+    )
+    if st.session_state.alerts:
+        for a in st.session_state.alerts:
+            st.markdown(
+                f'<div class="alert-item">{a["msg"]}<br/>'
+                f'<span class="alert-time">{a["time"]}</span></div>',
+                unsafe_allow_html=True,
+            )
+    else:
+        st.caption("No alerts yet — new trades will appear here.")
 
 # ── Add wallet form ──
 with st.form("add_wallet", clear_on_submit=True):
@@ -127,7 +167,6 @@ else:
             continue
 
         # ── Filter active vs closed positions ──
-        from datetime import date
         today = date.today()
         active_positions = []
         closed_positions = []
@@ -188,7 +227,6 @@ else:
             else:
                 rows = []
                 for t in trades:
-                    from datetime import datetime
                     ts = t.get("timestamp")
                     time_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts else "—"
                     rows.append({
@@ -207,6 +245,55 @@ else:
                         "Price": st.column_config.NumberColumn(format="%.3f"),
                     },
                 )
+
+# ── Alert poller (runs as a fragment, re-executes every 60s) ──
+@st.fragment(run_every=60)
+def poll_alerts():
+    wlist = load_wallets()
+    if not wlist:
+        return
+    threshold = st.session_state.alert_threshold
+    new_alerts = []
+    for w in wlist:
+        addr = w["address"]
+        lbl = w["label"]
+        try:
+            recent = fetch_recent_trades(addr)
+        except Exception:
+            continue
+        if not recent:
+            continue
+        last_known = st.session_state.last_trade_ts.get(addr, 0)
+        # On first load, just record the latest timestamp without alerting
+        if last_known == 0:
+            st.session_state.last_trade_ts[addr] = recent[0].get("timestamp", 0)
+            continue
+        for t in recent:
+            ts = t.get("timestamp", 0)
+            if ts <= last_known:
+                break
+            usdc_size = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
+            if usdc_size < threshold:
+                continue
+            side = (t.get("side") or "BUY").upper()
+            market = t.get("title", "Unknown")
+            size = float(t.get("size", 0))
+            price = float(t.get("price", 0))
+            msg = f'🚨 **{lbl}** vient d\'ouvrir une position sur "{market}" — {side} {size:.1f} shares à {price*100:.0f}¢'
+            new_alerts.append({
+                "msg": msg,
+                "time": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"),
+                "ts": ts,
+            })
+            st.toast(msg, icon="🚨")
+        # Update last known timestamp
+        latest_ts = recent[0].get("timestamp", 0)
+        if latest_ts > last_known:
+            st.session_state.last_trade_ts[addr] = latest_ts
+    if new_alerts:
+        st.session_state.alerts = (new_alerts + st.session_state.alerts)[:20]
+
+poll_alerts()
 
 # ── Refresh button ──
 if wallets:
