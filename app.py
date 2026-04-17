@@ -27,13 +27,15 @@ def fetch_trades(address):
     r.raise_for_status()
     return r.json()
 
+LB_API = "https://lb-api.polymarket.com"
+
 @st.cache_data(ttl=60)
-def fetch_value(address):
-    r = requests.get(f"{DATA_API}/value", params={"user": address.lower()}, timeout=15)
+def fetch_pnl(address):
+    r = requests.get(f"{LB_API}/profit", params={"window": "all", "address": address.lower()}, timeout=15)
     r.raise_for_status()
     data = r.json()
     if data and len(data) > 0:
-        return float(data[0].get("value", 0))
+        return float(data[0].get("amount", 0))
     return 0.0
 
 # ── DB helpers ──
@@ -119,7 +121,7 @@ else:
         try:
             positions = fetch_positions(addr)
             trades = fetch_trades(addr)
-            total_pnl = fetch_value(addr)
+            total_pnl = fetch_pnl(addr)
         except Exception as e:
             st.error(f"Failed to fetch data for {lbl}: {e}")
             continue
