@@ -27,6 +27,15 @@ def fetch_trades(address):
     r.raise_for_status()
     return r.json()
 
+@st.cache_data(ttl=60)
+def fetch_value(address):
+    r = requests.get(f"{DATA_API}/value", params={"user": address.lower()}, timeout=15)
+    r.raise_for_status()
+    data = r.json()
+    if data and len(data) > 0:
+        return float(data[0].get("value", 0))
+    return 0.0
+
 # ── DB helpers ──
 def load_wallets():
     res = db.table("wallets").select("*").order("created_at").execute()
@@ -110,12 +119,12 @@ else:
         try:
             positions = fetch_positions(addr)
             trades = fetch_trades(addr)
+            total_pnl = fetch_value(addr)
         except Exception as e:
             st.error(f"Failed to fetch data for {lbl}: {e}")
             continue
 
         # ── Stats ──
-        total_pnl = sum(float(p.get("cashPnl", 0)) for p in positions)
         wins = [t for t in trades if (t.get("side", "").upper() == "BUY" and float(t.get("price", 1)) < 0.5) or (t.get("side", "").upper() == "SELL" and float(t.get("price", 0)) > 0.5)]
         win_rate = (len(wins) / len(trades) * 100) if trades else 0
 
