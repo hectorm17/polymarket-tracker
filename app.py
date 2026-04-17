@@ -3,7 +3,11 @@ import requests
 import feedparser
 import ssl
 import time
+import json as _json
+import pandas as pd
+import plotly.graph_objects as go
 from datetime import date, datetime, timezone
+from pathlib import Path
 from supabase import create_client
 
 # ── Fix SSL for RSS feeds ──
@@ -240,7 +244,7 @@ st.title("📊 Polymarket Wallet Tracker")
 # MAIN TABS
 # ─────────────────────────────────────────────
 
-main_tab_wallets, main_tab_analyst = st.tabs(["💰 Wallets", "🤖 Analyste IA"])
+main_tab_wallets, main_tab_analyst, main_tab_paper = st.tabs(["💰 Wallets", "🤖 Analyste IA", "🟡 Paper Trading"])
 
 # ═════════════════════════════════════════════
 # TAB 1: WALLETS
@@ -625,3 +629,176 @@ Question : trade à envisager ? Si oui, dans quel sens, à quel niveau, quel sto
     def auto_refresh_analyst():
         st.cache_data.clear()
     auto_refresh_analyst()
+
+# ═════════════════════════════════════════════
+# TAB 3: PAPER TRADING
+# ═════════════════════════════════════════════
+
+with main_tab_paper:
+
+    PAPER_CSV = Path("paper_trades.csv")
+    PAPER_STATE = Path("monitor_state.json")
+
+    hdr1, hdr2 = st.columns([6, 1])
+    hdr1.markdown(f"🟡 **PAPER TRADING LIVE** &nbsp; Dernière MAJ : `{datetime.now().strftime('%H:%M:%S')}`")
+    if hdr2.button("⟳ Refresh", key="refresh_paper", use_container_width=True):
+        st.rerun()
+
+    # ── Load data ──
+    if not PAPER_CSV.exists() or not PAPER_STATE.exists():
+        st.warning("Live monitor pas encore démarré. Lance `python3 live_monitor.py` dans un terminal.")
+    else:
+        df = pd.read_csv(PAPER_CSV)
+        with open(PAPER_STATE) as f:
+            state_data = _json.load(f)
+
+        bankroll = state_data.get("bankroll", 1000)
+        start_time = state_data.get("start_time", "")
+        all_trades = state_data.get("trades", [])
+
+        resolved_trades = [t for t in all_trades if t.get("status") == "resolved"]
+        pending_trades = [t for t in all_trades if t.get("status") == "pending"]
+
+        total_pnl = sum(t.get("pnl", 0) for t in resolved_trades)
+        wins = len([t for t in resolved_trades if t.get("pnl", 0) > 0])
+        losses = len(resolved_trades) - wins
+        win_rate = (wins / len(resolved_trades) * 100) if resolved_trades else 0
+        roi = (bankroll - 1000) / 1000 * 100
+
+        # ── Running time ──
+        if start_time:
+            try:
+                delta = datetime.now() - datetime.fromisoformat(start_time)
+                running = f"{delta.days}j {delta.seconds // 3600}h"
+            except Exception:
+                running = "—"
+        else:
+            running = "—"
+
+        # ── Metrics row ──
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Bankroll", f"${bankroll:,.2f}", f"{roi:+.1f}%")
+        m2.metric("Win Rate", f"{win_rate:.1f}%", f"{wins}W / {losses}L")
+        m3.metric("P&L Total", f"${total_pnl:+,.2f}")
+        m4.metric("Trades", f"{len(resolved_trades)} / {len(all_trades)}", f"Running {running}")
+
+        # ── Go-live indicator ──
+        if len(resolved_trades) >= 20 and win_rate > 75:
+            st.success(f"🟢 **READY FOR LIVE** — Win rate {win_rate:.1f}% sur {len(resolved_trades)} trades résolus")
+        elif len(resolved_trades) >= 20:
+            st.error(f"🔴 Win rate {win_rate:.1f}% < 75% — Continuer le paper trading")
+        else:
+            st.info(f"⏳ {len(resolved_trades)}/20 trades résolus minimum avant évaluation")
+
+        st.divider()
+
+        # ── Equity curve ──
+        if resolved_trades:
+            st.markdown("##### 📈 Courbe de bankroll")
+            sorted_resolved = sorted(resolved_trades, key=lambda t: t.get("timestamp", ""))
+            cumulative = [1000]
+            timestamps = [sorted_resolved[0].get("timestamp", "")[:10] if sorted_resolved else ""]
+            for t in sorted_resolved:
+                cumulative.append(cumulative[-1] + t.get("pnl", 0))
+                timestamps.append(t.get("timestamp", "")[:16])
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=list(range(len(cumulative))),
+                y=cumulative,
+                mode="lines+markers",
+                line=dict(color="#00ff88", width=2),
+                marker=dict(size=4),
+                name="Bankroll",
+                hovertemplate="Trade #%{x}<br>Bankroll: $%{y:,.2f}<extra></extra>",
+            ))
+            fig.add_hline(y=1000, line_dash="dash", line_color="#6b7280", annotation_text="Start $1,000")
+            fig.update_layout(
+                height=300,
+                margin=dict(l=0, r=0, t=10, b=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white"),
+                xaxis=dict(title="Trade #", gridcolor="#1f2937"),
+                yaxis=dict(title="Bankroll ($)", gridcolor="#1f2937"),
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+
+        # ── Pending trades ──
+        st.markdown(f"##### ⏳ En attente ({len(pending_trades)})")
+        if pending_trades:
+            pending_rows = []
+            for t in sorted(pending_trades, key=lambda x: x.get("date", "")):
+                pending_rows.append({
+                    "Ville": t.get("city", ""),
+                    "Date": t.get("date", ""),
+                    "Target": t.get("target", ""),
+                    "Prévision": f"{t.get('forecast', '')}°C",
+                    "Prix mkt": f"{t.get('mkt_price', 0):.1%}",
+                    "Edge": f"{t.get('edge', 0):+.3f}",
+                    "Signal": t.get("signal", ""),
+                    "Mise": f"${t.get('stake', 0):.0f}",
+                })
+            st.dataframe(pending_rows, use_container_width=True, hide_index=True)
+        else:
+            st.caption("Aucun trade en attente.")
+
+        st.divider()
+
+        # ── Resolved trades ──
+        st.markdown(f"##### 📋 Résolus ({len(resolved_trades)})")
+        if resolved_trades:
+            resolved_rows = []
+            for t in reversed(sorted(resolved_trades, key=lambda x: x.get("timestamp", ""))):
+                pnl_val = t.get("pnl", 0)
+                icon = "✅" if pnl_val > 0 else "❌"
+                resolved_rows.append({
+                    "": icon,
+                    "Ville": t.get("city", ""),
+                    "Date": t.get("date", ""),
+                    "Target": t.get("target", ""),
+                    "Signal": t.get("signal", ""),
+                    "Réel": f"{t.get('real_temp', '?')}°C",
+                    "Résultat": t.get("result", ""),
+                    "P&L": f"${pnl_val:+.2f}",
+                    "Mise": f"${t.get('stake', 0):.0f}",
+                })
+            st.dataframe(resolved_rows, use_container_width=True, hide_index=True)
+        else:
+            st.caption("Aucun trade résolu pour le moment.")
+
+        # ── Stats by city ──
+        if resolved_trades:
+            st.divider()
+            st.markdown("##### 🌍 Performance par ville")
+            city_stats = {}
+            for t in resolved_trades:
+                c = t.get("city", "?")
+                if c not in city_stats:
+                    city_stats[c] = {"wins": 0, "losses": 0, "pnl": 0}
+                if t.get("pnl", 0) > 0:
+                    city_stats[c]["wins"] += 1
+                else:
+                    city_stats[c]["losses"] += 1
+                city_stats[c]["pnl"] += t.get("pnl", 0)
+
+            city_rows = []
+            for c, s in sorted(city_stats.items(), key=lambda x: -x[1]["pnl"]):
+                total = s["wins"] + s["losses"]
+                wr = s["wins"] / total * 100 if total else 0
+                city_rows.append({
+                    "Ville": c,
+                    "Trades": total,
+                    "W/L": f"{s['wins']}/{s['losses']}",
+                    "Win Rate": f"{wr:.0f}%",
+                    "P&L": f"${s['pnl']:+.2f}",
+                })
+            st.dataframe(city_rows, use_container_width=True, hide_index=True)
+
+    # ── Auto-refresh every 60s ──
+    @st.fragment(run_every=60)
+    def auto_refresh_paper():
+        pass  # fragment triggers rerun
+    auto_refresh_paper()
