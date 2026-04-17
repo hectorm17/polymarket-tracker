@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 .env
+paper_trades.csv
+monitor_state.json
