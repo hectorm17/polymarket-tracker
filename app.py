@@ -133,17 +133,23 @@ else:
         mcol1, mcol2, mcol3 = st.columns(3)
         mcol1.metric("Total P&L", f"${total_pnl:+.2f}")
         mcol2.metric("Win Rate", f"{win_rate:.1f}%")
-        mcol3.metric("Open Positions", len(positions))
+        from datetime import datetime, timezone
+        active_positions = [
+            p for p in positions
+            if float(p.get("curPrice", 0)) > 0
+            or (p.get("endDate") and datetime.fromisoformat(p["endDate"].replace("Z", "+00:00")) > datetime.now(timezone.utc))
+        ]
+        mcol3.metric("Open Positions", len(active_positions))
 
         # ── Tabs ──
-        tab_pos, tab_trades = st.tabs([f"📈 Positions ({len(positions)})", f"🔄 Recent Trades ({len(trades)})"])
+        tab_pos, tab_trades = st.tabs([f"📈 Positions ({len(active_positions)})", f"🔄 Recent Trades ({len(trades)})"])
 
         with tab_pos:
-            if not positions:
+            if not active_positions:
                 st.info("No open positions")
             else:
                 rows = []
-                for p in positions:
+                for p in active_positions:
                     side = (p.get("outcome") or "Yes").upper()
                     rows.append({
                         "Market": p.get("title", "Unknown"),
