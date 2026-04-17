@@ -244,7 +244,7 @@ st.title("📊 Polymarket Wallet Tracker")
 # MAIN TABS
 # ─────────────────────────────────────────────
 
-main_tab_wallets, main_tab_analyst, main_tab_paper = st.tabs(["💰 Wallets", "🤖 Analyste IA", "🟡 Paper Trading"])
+main_tab_wallets, main_tab_analyst, main_tab_paper, main_tab_live = st.tabs(["💰 Wallets", "🤖 Analyste IA", "🟡 Paper Trading", "📡 Live Feed"])
 
 # ═════════════════════════════════════════════
 # TAB 1: WALLETS
@@ -832,3 +832,276 @@ with main_tab_paper:
     def auto_refresh_paper():
         pass  # fragment triggers rerun
     auto_refresh_paper()
+
+# ═════════════════════════════════════════════
+# TAB 4: LIVE FEED & LEADERBOARD
+# ═════════════════════════════════════════════
+
+with main_tab_live:
+
+    # ── Session state for this tab ──
+    if "tracked_whales" not in st.session_state:
+        st.session_state.tracked_whales = [
+            {"addr": "0x2a2c53bd278c04da9962fcf96490e17f3dfb9bc1", "label": "Whale-Tennis", "fav": True},
+            {"addr": "0xbddf61af533ff524d27154e589d2d7a81510c684", "label": "Whale-NBA", "fav": True},
+            {"addr": "0x2005d16a84ceefa912d4e380cd32e7ff827875ea", "label": "Whale-Football", "fav": False},
+            {"addr": "0xee613b3fc183ee44f9da9c05f53e2da107e3debf", "label": "Whale-Mixed", "fav": False},
+            {"addr": "0xc2e7800b5af46e6093872b177b7a5e7f0563be51", "label": "Warriors-Fan", "fav": False},
+            {"addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11", "label": "ColdMath", "fav": False},
+        ]
+    if "whale_alerts_history" not in st.session_state:
+        st.session_state.whale_alerts_history = []
+
+    WHALE_THRESHOLD = 500  # $
+
+    # ── Data fetchers ──
+    @st.cache_data(ttl=30)
+    def fetch_whale_trades(address):
+        try:
+            r = requests.get(f"{DATA_API}/trades", params={"user": address.lower(), "limit": 20}, timeout=15)
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            return []
+
+    @st.cache_data(ttl=60)
+    def fetch_whale_value(address):
+        try:
+            r = requests.get(f"{DATA_API}/value", params={"user": address.lower()}, timeout=10)
+            data = r.json()
+            return float(data[0].get("value", 0)) if data else 0
+        except Exception:
+            return 0
+
+    @st.cache_data(ttl=60)
+    def fetch_whale_pnl(address):
+        try:
+            r = requests.get(f"{LB_API}/profit", params={"window": "all", "address": address.lower()}, timeout=10)
+            data = r.json()
+            return float(data[0].get("amount", 0)) if data else 0
+        except Exception:
+            return 0
+
+    @st.cache_data(ttl=60)
+    def fetch_whale_positions_count(address):
+        try:
+            r = requests.get(f"{DATA_API}/positions", params={"user": address.lower(), "sizeThreshold": 0.1, "limit": 1}, timeout=10)
+            return len(r.json())
+        except Exception:
+            return 0
+
+    def detect_specialty(trades):
+        """Guess trader specialty from recent trade titles."""
+        cats = {"Sports": 0, "Crypto": 0, "Politics": 0, "Weather": 0, "Other": 0}
+        sport_kw = ["win", "beat", "spread", "nba", "nfl", "nhl", "tennis", "grand prix", "fc ", "vs.", "match"]
+        crypto_kw = ["bitcoin", "btc", "eth", "crypto", "up or down"]
+        politics_kw = ["trump", "election", "president", "congress", "vote", "poll"]
+        weather_kw = ["temperature", "weather", "highest temp"]
+        for t in trades:
+            title = (t.get("title") or "").lower()
+            if any(k in title for k in sport_kw): cats["Sports"] += 1
+            elif any(k in title for k in crypto_kw): cats["Crypto"] += 1
+            elif any(k in title for k in politics_kw): cats["Politics"] += 1
+            elif any(k in title for k in weather_kw): cats["Weather"] += 1
+            else: cats["Other"] += 1
+        return max(cats, key=cats.get) if trades else "?"
+
+    def short_addr(addr):
+        return addr[:6] + "..." + addr[-4:]
+
+    # ── Header ──
+    now_str = datetime.now().strftime("%H:%M:%S")
+    hdr1, hdr2 = st.columns([6, 1])
+    hdr1.markdown(f"📡 **LIVE FEED** &nbsp; `{now_str}` &nbsp; Refresh 30s")
+    if hdr2.button("⟳", key="refresh_live", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+    # ── Whale Alerts (top of page) ──
+    all_recent_trades = []
+    whale_alerts = []
+    leaderboard_data = []
+
+    tracked = st.session_state.tracked_whales
+
+    for w in tracked:
+        addr = w["addr"]
+        label = w["label"]
+        trades_list = fetch_whale_trades(addr)
+        value = fetch_whale_value(addr)
+        pnl = fetch_whale_pnl(addr)
+        specialty = detect_specialty(trades_list)
+
+        # Enrich trades with wallet info
+        for t in trades_list:
+            t["_label"] = label
+            t["_addr"] = addr
+            t["_fav"] = w.get("fav", False)
+            usdc = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
+            t["_usdc"] = usdc
+            all_recent_trades.append(t)
+            if usdc >= WHALE_THRESHOLD:
+                whale_alerts.append(t)
+
+        # Last activity
+        last_ts = trades_list[0].get("timestamp", 0) if trades_list else 0
+        last_activity = datetime.fromtimestamp(last_ts).strftime("%H:%M") if last_ts else "—"
+
+        leaderboard_data.append({
+            "fav": w.get("fav", False),
+            "addr": addr,
+            "label": label,
+            "pnl": pnl,
+            "value": value,
+            "specialty": specialty,
+            "last_activity": last_activity,
+            "trades_count": len(trades_list),
+        })
+
+    # Display whale alerts
+    if whale_alerts:
+        whale_alerts.sort(key=lambda t: t.get("timestamp", 0), reverse=True)
+        for t in whale_alerts[:5]:
+            side = (t.get("side") or "BUY").upper()
+            emoji = "🟢" if side == "BUY" else "🔴"
+            title = t.get("title", "?")[:55]
+            st.markdown(
+                f'<div class="news-breaking">'
+                f'<span class="badge-breaking">WHALE ${t["_usdc"]:,.0f}</span> '
+                f'{emoji} **{t["_label"]}** {side} — "{title}" — ${t["_usdc"]:,.0f}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        st.divider()
+
+    # ── Leaderboard ──
+    st.markdown("##### 🏆 Leaderboard")
+    leaderboard_data.sort(key=lambda x: (-x["fav"], -x["pnl"]))
+    lb_rows = []
+    for i, d in enumerate(leaderboard_data):
+        star = "⭐ " if d["fav"] else ""
+        lb_rows.append({
+            "#": i + 1,
+            "Wallet": f"{star}{d['label']}",
+            "Adresse": short_addr(d["addr"]),
+            "P&L Total": f"${d['pnl']:+,.0f}",
+            "Positions Value": f"${d['value']:,.0f}",
+            "Spécialité": d["specialty"],
+            "Dernière activité": d["last_activity"],
+        })
+    st.dataframe(lb_rows, use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    # ── Live Feed ──
+    st.markdown("##### 📡 Live Feed — Tous les trades récents")
+    all_recent_trades.sort(key=lambda t: t.get("timestamp", 0), reverse=True)
+
+    for t in all_recent_trades[:30]:
+        ts = t.get("timestamp", 0)
+        time_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S") if ts else "?"
+        side = (t.get("side") or "BUY").upper()
+        emoji = "🟢" if side == "BUY" else "🔴"
+        title = t.get("title", "?")[:55]
+        outcome = t.get("outcome", "")
+        usdc = t["_usdc"]
+        label = t["_label"]
+        fav_star = "⭐" if t.get("_fav") else ""
+
+        size_class = "badge-breaking" if usdc >= WHALE_THRESHOLD else "badge-ticker"
+        size_label = f"${usdc:,.0f}" if usdc >= 1 else "<$1"
+
+        st.markdown(
+            f'<div class="news-item">'
+            f'{emoji} <span class="news-time">[{time_str}]</span> '
+            f'{fav_star}<b>{label}</b> '
+            f'{side} {outcome} — {title} '
+            f'<span class="{size_class}">{size_label}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.divider()
+
+    # ── Wallet Discovery ──
+    st.markdown("##### 🔍 Wallet Discovery")
+    with st.form("discover_wallet", clear_on_submit=True):
+        dcols = st.columns([4, 1])
+        discover_addr = dcols[0].text_input("Adresse", placeholder="0x...", label_visibility="collapsed")
+        discover_btn = dcols[1].form_submit_button("Rechercher", use_container_width=True)
+
+    if discover_btn and discover_addr.strip():
+        addr = discover_addr.strip().lower()
+        with st.spinner("Recherche..."):
+            d_trades = fetch_whale_trades(addr)
+            d_pnl = fetch_whale_pnl(addr)
+            d_value = fetch_whale_value(addr)
+            d_spec = detect_specialty(d_trades)
+
+        st.markdown(f"**{short_addr(addr)}** — {d_spec}")
+        dc1, dc2, dc3 = st.columns(3)
+        dc1.metric("P&L", f"${d_pnl:+,.0f}")
+        dc2.metric("Value", f"${d_value:,.0f}")
+        dc3.metric("Trades récents", len(d_trades))
+
+        if d_trades:
+            st.markdown("**Derniers trades :**")
+            for t in d_trades[:5]:
+                side = (t.get("side") or "BUY").upper()
+                emoji = "🟢" if side == "BUY" else "🔴"
+                usdc = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
+                st.markdown(f"{emoji} {side} {t.get('outcome','')} — {t.get('title','?')[:55]} — ${usdc:,.0f}")
+
+        # Add to tracking button
+        already = any(w["addr"] == addr for w in st.session_state.tracked_whales)
+        if not already:
+            lbl = st.text_input("Label pour ce wallet", value=short_addr(addr), key="disc_label")
+            if st.button("➕ Ajouter au suivi", key="add_discovered"):
+                st.session_state.tracked_whales.append({"addr": addr, "label": lbl, "fav": False})
+                st.cache_data.clear()
+                st.rerun()
+        else:
+            st.info("Ce wallet est déjà suivi.")
+
+    st.divider()
+
+    # ── Manage tracked wallets ──
+    with st.expander("⚙️ Gérer les wallets suivis"):
+        for i, w in enumerate(st.session_state.tracked_whales):
+            c1, c2, c3, c4 = st.columns([3, 2, 1, 1])
+            c1.text(f"{w['label']}")
+            c2.caption(short_addr(w["addr"]))
+            if c3.button("⭐" if not w["fav"] else "★", key=f"fav_{i}", use_container_width=True):
+                st.session_state.tracked_whales[i]["fav"] = not w["fav"]
+                st.rerun()
+            if c4.button("🗑️", key=f"rm_whale_{i}", use_container_width=True):
+                st.session_state.tracked_whales.pop(i)
+                st.rerun()
+
+    st.divider()
+
+    # ── Export CSV ──
+    if st.button("📥 Exporter tous les trades (CSV)", key="export_csv", use_container_width=True):
+        export_rows = []
+        for t in all_recent_trades:
+            ts = t.get("timestamp", 0)
+            export_rows.append({
+                "timestamp": datetime.fromtimestamp(ts).isoformat() if ts else "",
+                "wallet": t.get("_label", ""),
+                "address": t.get("_addr", ""),
+                "side": t.get("side", ""),
+                "outcome": t.get("outcome", ""),
+                "market": t.get("title", ""),
+                "size": t.get("size", 0),
+                "price": t.get("price", 0),
+                "usdc": t.get("_usdc", 0),
+            })
+        export_df = pd.DataFrame(export_rows)
+        csv_data = export_df.to_csv(index=False)
+        st.download_button("💾 Télécharger le CSV", csv_data, "whale_trades_export.csv", "text/csv")
+
+    # ── Auto-refresh 30s ──
+    @st.fragment(run_every=30)
+    def auto_refresh_live():
+        st.cache_data.clear()
+    auto_refresh_live()
