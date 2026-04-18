@@ -10,12 +10,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from supabase import create_client
 
-# ── Fix SSL for RSS feeds ──
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# ─────────────────────────────────────────────
+# =============================================
 # CONSTANTS
-# ─────────────────────────────────────────────
+# =============================================
 
 TICKERS = {
     "Crypto": ["BTC-USD", "ETH-USD", "SOL-USD"],
@@ -24,15 +23,13 @@ TICKERS = {
     "Forex": ["EURUSD=X", "DX-Y.NYB", "JPY=X"],
     "Macro": ["^VIX", "^TNX", "GC=F", "CL=F"],
 }
-
 TICKER_LABELS = {
     "BTC-USD": "BTC", "ETH-USD": "ETH", "SOL-USD": "SOL",
     "SPY": "SPY", "QQQ": "QQQ", "AAPL": "Apple", "NVDA": "Nvidia", "TSLA": "Tesla",
-    "^FCHI": "CAC 40", "MC.PA": "LVMH", "RMS.PA": "Hermès", "AIR.PA": "Airbus", "TTE.PA": "TotalEnergies",
+    "^FCHI": "CAC 40", "MC.PA": "LVMH", "RMS.PA": "Hermes", "AIR.PA": "Airbus", "TTE.PA": "TotalEnergies",
     "EURUSD=X": "EUR/USD", "DX-Y.NYB": "DXY", "JPY=X": "USD/JPY",
-    "^VIX": "VIX", "^TNX": "US 10Y", "GC=F": "Or", "CL=F": "Pétrole WTI",
+    "^VIX": "VIX", "^TNX": "US 10Y", "GC=F": "Gold", "CL=F": "Oil WTI",
 }
-
 FEEDS = {
     "Reuters": "https://news.google.com/rss/search?q=site:reuters.com+markets+economy&hl=en-US&gl=US&ceid=US:en",
     "Bloomberg": "https://news.google.com/rss/search?q=site:bloomberg.com+markets&hl=en-US&gl=US&ceid=US:en",
@@ -44,20 +41,21 @@ FEEDS = {
     "Seeking Alpha": "https://seekingalpha.com/market_currents.xml",
     "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
 }
-
 BREAKING_KEYWORDS = [
-    "hermès", "hermes", "lvmh", "apple", "nvidia", "tesla", "airbus", "total",
+    "hermes", "lvmh", "apple", "nvidia", "tesla", "airbus", "total",
     "bitcoin", "btc", "ethereum", "eth", "solana",
     "fed", "bce", "ecb", "powell", "lagarde",
     "trump", "tarif", "tariff", "inflation", "cpi", "recession",
     "taux", "rate", "war", "guerre", "sanctions", "iran", "china", "chine",
     "crash", "rallye", "rally", "sell-off", "selloff", "plunge", "surge",
-    "vix", "volatil", "pétrole", "oil", "gold", "or ",
+    "vix", "volatil", "oil", "gold",
 ]
+DATA_API = "https://data-api.polymarket.com"
+LB_API = "https://lb-api.polymarket.com"
 
-# ─────────────────────────────────────────────
+# =============================================
 # SUPABASE
-# ─────────────────────────────────────────────
+# =============================================
 
 @st.cache_resource
 def get_supabase():
@@ -65,12 +63,9 @@ def get_supabase():
 
 db = get_supabase()
 
-# ─────────────────────────────────────────────
-# DATA FETCHERS — POLYMARKET
-# ─────────────────────────────────────────────
-
-DATA_API = "https://data-api.polymarket.com"
-LB_API = "https://lb-api.polymarket.com"
+# =============================================
+# DATA FETCHERS
+# =============================================
 
 @st.cache_data(ttl=60)
 def fetch_positions(address):
@@ -96,16 +91,11 @@ def fetch_pnl(address):
     data = r.json()
     return float(data[0].get("amount", 0)) if data else 0.0
 
-# ─────────────────────────────────────────────
-# DATA FETCHERS — MARKET
-# ─────────────────────────────────────────────
-
 @st.cache_data(ttl=60)
 def fetch_all_prices():
     import yfinance as yf
     results = {}
-    all_syms = [s for group in TICKERS.values() for s in group]
-    for sym in all_syms:
+    for sym in [s for g in TICKERS.values() for s in g]:
         try:
             t = yf.Ticker(sym)
             info = t.fast_info
@@ -136,22 +126,48 @@ def fetch_all_news():
                 pub = e.get("published_parsed")
                 ts = datetime(*pub[:6], tzinfo=timezone.utc) if pub else None
                 title = e.get("title", "")
-                title_lower = title.lower()
-                is_breaking = any(kw in title_lower for kw in BREAKING_KEYWORDS)
-                matched = [lbl for lbl in TICKER_LABELS.values() if lbl.lower() in title_lower or lbl.upper() in title]
-                items.append({"title": title, "source": source, "link": e.get("link", ""), "time": ts, "breaking": is_breaking, "tickers": matched})
+                tl = title.lower()
+                items.append({"title": title, "source": source, "link": e.get("link", ""), "time": ts,
+                              "breaking": any(kw in tl for kw in BREAKING_KEYWORDS),
+                              "tickers": [l for l in TICKER_LABELS.values() if l.lower() in tl or l.upper() in title]})
         except Exception:
             continue
     items.sort(key=lambda x: x["time"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return items
 
-# ─────────────────────────────────────────────
+@st.cache_data(ttl=30)
+def fetch_whale_trades(address):
+    try:
+        r = requests.get(f"{DATA_API}/trades", params={"user": address.lower(), "limit": 20}, timeout=15)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return []
+
+@st.cache_data(ttl=60)
+def fetch_whale_value(address):
+    try:
+        r = requests.get(f"{DATA_API}/value", params={"user": address.lower()}, timeout=10)
+        data = r.json()
+        return float(data[0].get("value", 0)) if data else 0
+    except Exception:
+        return 0
+
+@st.cache_data(ttl=60)
+def fetch_whale_pnl(address):
+    try:
+        r = requests.get(f"{LB_API}/profit", params={"window": "all", "address": address.lower()}, timeout=10)
+        data = r.json()
+        return float(data[0].get("amount", 0)) if data else 0
+    except Exception:
+        return 0
+
+# =============================================
 # DB HELPERS
-# ─────────────────────────────────────────────
+# =============================================
 
 def load_wallets():
-    res = db.table("wallets").select("*").order("created_at").execute()
-    return res.data
+    return db.table("wallets").select("*").order("created_at").execute().data
 
 def add_wallet(address, label):
     db.table("wallets").insert({"address": address.lower(), "label": label}).execute()
@@ -159,379 +175,384 @@ def add_wallet(address, label):
 def remove_wallet(address):
     db.table("wallets").delete().eq("address", address.lower()).execute()
 
-# ─────────────────────────────────────────────
+# =============================================
 # HELPERS
-# ─────────────────────────────────────────────
+# =============================================
 
 def time_ago(ts):
-    if not ts:
-        return ""
-    delta = datetime.now(timezone.utc) - ts
-    mins = int(delta.total_seconds() / 60)
-    if mins < 0:
-        return "à l'instant"
-    if mins < 60:
-        return f"il y a {mins} min"
-    if mins < 1440:
-        return f"il y a {mins // 60}h"
-    return f"il y a {mins // 1440}j"
+    if not ts: return ""
+    mins = int((datetime.now(timezone.utc) - ts).total_seconds() / 60)
+    if mins < 0: return "now"
+    if mins < 60: return f"{mins}m ago"
+    if mins < 1440: return f"{mins // 60}h ago"
+    return f"{mins // 1440}d ago"
 
 def fmt_price(p, sym=""):
-    if "JPY" in sym:
-        return f"¥{p:,.2f}"
-    if "EUR" in sym and "=" in sym:
-        return f"${p:.4f}"
-    if "TNX" in sym:
-        return f"{p:.2f}%"
-    if "VIX" in sym:
-        return f"{p:.1f}"
-    if p >= 1000:
-        return f"${p:,.0f}"
-    if p >= 1:
-        return f"${p:,.2f}"
+    if "JPY" in sym: return f"{p:,.2f}"
+    if "EUR" in sym and "=" in sym: return f"${p:.4f}"
+    if "TNX" in sym: return f"{p:.2f}%"
+    if "VIX" in sym: return f"{p:.1f}"
+    if p >= 1000: return f"${p:,.0f}"
+    if p >= 1: return f"${p:,.2f}"
     return f"${p:.4f}"
 
-# ─────────────────────────────────────────────
-# SESSION STATE
-# ─────────────────────────────────────────────
+def short_addr(addr):
+    return addr[:6] + "..." + addr[-4:]
 
-for key, default in {
-    "alerts": [],
-    "last_trade_ts": {},
-    "alert_threshold": 100.0,
-    "analyses": [],
-    "daily_summaries": [],
-    "auto_analysis_done": False,
-}.items():
+def detect_specialty(trades):
+    cats = {"Sports": 0, "Crypto": 0, "Politics": 0, "Weather": 0, "Other": 0}
+    for t in trades:
+        title = (t.get("title") or "").lower()
+        if any(k in title for k in ["win", "beat", "spread", "nba", "nfl", "nhl", "tennis", "fc ", "vs.", "match"]): cats["Sports"] += 1
+        elif any(k in title for k in ["bitcoin", "btc", "eth", "crypto", "up or down"]): cats["Crypto"] += 1
+        elif any(k in title for k in ["trump", "election", "president", "congress", "vote"]): cats["Politics"] += 1
+        elif any(k in title for k in ["temperature", "weather", "highest temp"]): cats["Weather"] += 1
+        else: cats["Other"] += 1
+    return max(cats, key=cats.get) if trades else "N/A"
+
+# =============================================
+# SESSION STATE
+# =============================================
+
+for key, default in {"alerts": [], "last_trade_ts": {}, "alert_threshold": 100.0,
+                      "analyses": [], "daily_summaries": [], "auto_analysis_done": False}.items():
     if key not in st.session_state:
         st.session_state[key] = default
 
-# ─────────────────────────────────────────────
-# PAGE CONFIG + STYLES
-# ─────────────────────────────────────────────
+if "tracked_whales" not in st.session_state:
+    st.session_state.tracked_whales = [
+        {"addr": "0x2a2c53bd278c04da9962fcf96490e17f3dfb9bc1", "label": "Whale-Tennis", "fav": True},
+        {"addr": "0xbddf61af533ff524d27154e589d2d7a81510c684", "label": "Whale-NBA", "fav": True},
+        {"addr": "0x2005d16a84ceefa912d4e380cd32e7ff827875ea", "label": "Whale-Football", "fav": False},
+        {"addr": "0xee613b3fc183ee44f9da9c05f53e2da107e3debf", "label": "Whale-Mixed", "fav": False},
+        {"addr": "0xc2e7800b5af46e6093872b177b7a5e7f0563be51", "label": "Warriors-Fan", "fav": False},
+        {"addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11", "label": "ColdMath", "fav": False},
+    ]
 
-st.set_page_config(page_title="Polymarket Tracker", page_icon="📊", layout="wide")
+# =============================================
+# PAGE CONFIG + DESIGN SYSTEM
+# =============================================
 
-st.markdown("""
+st.set_page_config(page_title="PolyTracker", page_icon="P", layout="wide")
+
+st.markdown('''
 <style>
-    .block-container { padding-top: 2rem; }
-    div[data-testid="stMetric"] {
-        background: #111827; border: 1px solid #1f2937;
-        border-radius: 0.75rem; padding: 0.75rem;
-    }
-    div[data-testid="stMetric"] label { color: #9ca3af; font-size: 0.8rem; }
-    .alert-item { padding: 0.5rem 0.75rem; border-left: 3px solid #6366f1; background: #111827; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.4rem; font-size: 0.85rem; }
-    .alert-time { color: #6b7280; font-size: 0.75rem; }
-    .news-item { padding: 0.6rem 0.75rem; border-bottom: 1px solid #1f2937; font-size: 0.9rem; }
-    .news-breaking { padding: 0.6rem 0.75rem; border-left: 3px solid #ef4444; background: #1c0a0a; border-bottom: 1px solid #1f2937; font-size: 0.9rem; }
-    .news-source { color: #6366f1; font-size: 0.75rem; font-weight: 600; }
-    .news-time { color: #6b7280; font-size: 0.75rem; }
-    .badge-breaking { display: inline-block; background: #dc2626; color: white; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-right: 0.4rem; vertical-align: middle; }
-    .badge-ticker { display: inline-block; background: #312e81; color: #a5b4fc; font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-right: 0.3rem; vertical-align: middle; }
-    .signal-box { padding: 1.2rem 1.5rem; border-radius: 0.75rem; font-size: 1.3rem; font-weight: 700; text-align: center; margin: 0.5rem 0 1rem 0; }
-    .signal-risk-off { background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
-    .signal-risk-on { background: #052e16; border: 1px solid #16a34a; color: #86efac; }
-    .signal-neutral { background: #1c1917; border: 1px solid #a16207; color: #fde68a; }
-    .fg-bar-bg { background: #1f2937; border-radius: 0.5rem; height: 1.2rem; width: 100%; overflow: hidden; }
-    .fg-bar-fill { height: 100%; border-radius: 0.5rem; transition: width 0.5s; }
-    .analysis-box { background: #0f172a; border: 1px solid #1e3a5f; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1rem; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+* { font-family: Inter, system-ui, sans-serif !important; }
+.stApp { background-color: #0d0f14 !important; }
+section[data-testid="stSidebar"] { display: none; }
+header[data-testid="stHeader"] { background: #0d0f14 !important; border-bottom: 1px solid #1e2130; }
+.block-container { padding: 0 2rem 2rem 2rem !important; max-width: 1200px !important; }
+
+div[data-testid="stTabs"] button {
+    background: transparent !important; color: #6b7280 !important; border: none !important;
+    font-size: 14px !important; font-weight: 500 !important; padding: 12px 20px !important;
+}
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #ffffff !important; border-bottom: 2px solid #4f6ef7 !important;
+}
+div[data-testid="stMetricValue"] { color: #ffffff !important; }
+div[data-testid="stMetricLabel"] { color: #6b7280 !important; text-transform: uppercase !important;
+    letter-spacing: 0.08em !important; font-size: 11px !important; }
+div[data-testid="metric-container"] {
+    background: #131620 !important; border: 1px solid #1e2130 !important; border-radius: 12px !important; padding: 20px !important;
+}
+div[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+.stDataFrame table { background: #131620 !important; }
+
+.pt-card { background: #131620; border: 1px solid #1e2130; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.pt-row { display: flex; align-items: center; gap: 16px; padding: 14px 16px; border-bottom: 1px solid #131620;
+           font-size: 13px; transition: background 0.1s; }
+.pt-row:hover { background: #131620; }
+.pt-time { color: #374151; min-width: 60px; font-size: 12px; }
+.pt-addr { color: #4f6ef7; font-family: 'Courier New', monospace !important; font-size: 13px; }
+.pt-side-buy { background: #0d2818; color: #10b981; padding: 2px 8px; border-radius: 4px;
+               font-weight: 600; font-size: 11px; min-width: 35px; text-align: center; display: inline-block; }
+.pt-side-sell { background: #1f0d0d; color: #ef4444; padding: 2px 8px; border-radius: 4px;
+                font-weight: 600; font-size: 11px; min-width: 35px; text-align: center; display: inline-block; }
+.pt-title { color: #fff; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-amount-green { color: #10b981; font-weight: 500; min-width: 70px; text-align: right; }
+.pt-amount-red { color: #ef4444; font-weight: 500; min-width: 70px; text-align: right; }
+.pt-amount { color: #6b7280; font-weight: 500; min-width: 70px; text-align: right; }
+.pt-whale-badge { background: #1a2040; color: #4f6ef7; font-size: 11px; padding: 2px 8px;
+                  border-radius: 4px; border: 1px solid #2a3a6a; display: inline-block; }
+.pt-breaking-badge { background: #ef4444; color: #fff; font-size: 10px; font-weight: 700;
+                     padding: 2px 6px; border-radius: 3px; display: inline-block; margin-right: 6px; }
+.pt-ticker-badge { background: #1a2040; color: #818cf8; font-size: 10px; font-weight: 600;
+                   padding: 2px 6px; border-radius: 3px; display: inline-block; margin-right: 4px; }
+.pt-news { padding: 12px 16px; border-bottom: 1px solid #1e2130; font-size: 13px; }
+.pt-news-breaking { padding: 12px 16px; border-left: 3px solid #ef4444; background: #1a0a0a;
+                    border-bottom: 1px solid #1e2130; font-size: 13px; }
+.pt-source { color: #4f6ef7; font-size: 11px; font-weight: 600; }
+.pt-meta { color: #374151; font-size: 11px; }
+.pt-signal { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;
+             padding: 8px 16px; margin-bottom: 16px; }
+.pt-signal-off { background: #1f0d0d; border: 1px solid #ef444433; }
+.pt-signal-off span { color: #ef4444; }
+.pt-signal-on { background: #0d2818; border: 1px solid #10b98133; }
+.pt-signal-on span { color: #10b981; }
+.pt-signal-neutral { background: #1f1a0d; border: 1px solid #f59e0b33; }
+.pt-signal-neutral span { color: #f59e0b; }
+.pt-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.pt-section { color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+              font-weight: 600; margin: 24px 0 12px 0; }
+.pt-alert { padding: 10px 16px; border-left: 3px solid #4f6ef7; background: #131620;
+            border-radius: 0 8px 8px 0; margin-bottom: 6px; font-size: 13px; }
+.pt-fg-bar { background: #1e2130; border-radius: 6px; height: 8px; width: 100%; overflow: hidden; }
+.pt-fg-fill { height: 100%; border-radius: 6px; }
+.pt-empty { text-align: center; padding: 48px 0; color: #374151; }
 </style>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
-st.title("📊 Polymarket Wallet Tracker")
+# Header
+st.markdown('''
+<div style="display:flex; justify-content:space-between; align-items:center;
+            padding:20px 0; border-bottom:1px solid #1e2130; margin-bottom:24px;">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div style="background:#4f6ef7; border-radius:8px; width:32px; height:32px;
+                display:flex; align-items:center; justify-content:center;">
+      <span style="color:#fff; font-weight:700; font-size:14px;">P</span>
+    </div>
+    <span style="color:#fff; font-size:18px; font-weight:600; letter-spacing:-0.3px;">PolyTracker</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span style="display:inline-block; width:7px; height:7px; background:#10b981;
+                 border-radius:50%; animation: pulse 2s infinite;"></span>
+    <span style="color:#10b981; font-size:13px; font-weight:500;">Live</span>
+  </div>
+</div>
+''', unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# MAIN TABS
-# ─────────────────────────────────────────────
+# =============================================
+# TABS
+# =============================================
 
-main_tab_wallets, main_tab_analyst, main_tab_paper, main_tab_live = st.tabs(["💰 Wallets", "🤖 Analyste IA", "🟡 Paper Trading", "📡 Live Feed"])
+tab_wallets, tab_analyst, tab_paper, tab_live = st.tabs(["Wallets", "Analyst", "Paper Trading", "Live Feed"])
 
-# ═════════════════════════════════════════════
+# =============================================
 # TAB 1: WALLETS
-# ═════════════════════════════════════════════
+# =============================================
 
-with main_tab_wallets:
-    st.caption("Track positions, trades & P&L across proxy wallets")
+with tab_wallets:
 
-    with st.expander("🔔 Alerts", expanded=bool(st.session_state.alerts)):
+    with st.expander("Alerts", expanded=bool(st.session_state.alerts)):
         st.session_state.alert_threshold = st.number_input(
-            "Min trade size (USDC)", min_value=0.0, value=st.session_state.alert_threshold,
-            step=10.0, help="Only alert for trades above this amount",
-        )
+            "Min trade size (USDC)", min_value=0.0, value=st.session_state.alert_threshold, step=10.0)
         if st.session_state.alerts:
             for a in st.session_state.alerts:
-                st.markdown(f'<div class="alert-item">{a["msg"]}<br/><span class="alert-time">{a["time"]}</span></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="pt-alert">{a["msg"]}<br/><span class="pt-meta">{a["time"]}</span></div>', unsafe_allow_html=True)
         else:
-            st.caption("No alerts yet — new trades will appear here.")
+            st.markdown('<p class="pt-meta">No alerts yet</p>', unsafe_allow_html=True)
 
     with st.form("add_wallet", clear_on_submit=True):
         cols = st.columns([3, 2, 1])
-        address = cols[0].text_input("Wallet address", placeholder="0x...", label_visibility="collapsed")
+        address = cols[0].text_input("Wallet", placeholder="0x... proxy wallet address", label_visibility="collapsed")
         label = cols[1].text_input("Label", placeholder="Label (optional)", label_visibility="collapsed")
-        submitted = cols[2].form_submit_button("➕ Add", use_container_width=True)
+        submitted = cols[2].form_submit_button("Add Wallet", use_container_width=True)
 
     if submitted and address.strip():
         addr = address.strip()
-        lbl = label.strip() or (addr[:6] + "..." + addr[-4:])
+        lbl = label.strip() or short_addr(addr)
         try:
             add_wallet(addr, lbl)
             st.cache_data.clear()
             st.rerun()
         except Exception as e:
             if "duplicate" in str(e).lower() or "23505" in str(e):
-                st.warning("This wallet is already tracked.")
+                st.warning("Wallet already tracked.")
             else:
                 st.error(f"Error: {e}")
 
     wallets = load_wallets()
-
     if not wallets:
-        st.divider()
-        st.markdown('<div style="text-align:center; padding:4rem 0; color:#6b7280;"><p style="font-size:1.2rem;">No wallets tracked yet</p><p>Add a Polymarket proxy wallet address above to get started</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pt-empty"><p style="font-size:16px; font-weight:500;">No wallets tracked</p><p style="font-size:13px;">Add a Polymarket proxy wallet address above</p></div>', unsafe_allow_html=True)
     else:
         for wallet in wallets:
-            addr = wallet["address"]
-            lbl = wallet["label"]
-            short = addr[:6] + "..." + addr[-4:]
-            st.divider()
+            addr, lbl = wallet["address"], wallet["label"]
+            st.markdown(f'<div style="border-top:1px solid #1e2130; margin-top:16px;"></div>', unsafe_allow_html=True)
             hcol1, hcol2 = st.columns([6, 1])
-            hcol1.subheader(lbl)
-            hcol1.caption(f"`{short}`")
-            if hcol2.button("🗑️ Remove", key=f"rm_{addr}", use_container_width=True):
+            hcol1.markdown(f'<div style="margin-top:16px;"><span style="color:#fff; font-size:16px; font-weight:600;">{lbl}</span><br/><span class="pt-addr">{short_addr(addr)}</span></div>', unsafe_allow_html=True)
+            if hcol2.button("Remove", key=f"rm_{addr}", use_container_width=True):
                 remove_wallet(addr)
                 st.cache_data.clear()
                 st.rerun()
             try:
-                positions = fetch_positions(addr)
-                trades = fetch_trades(addr)
-                total_pnl = fetch_pnl(addr)
+                positions, trades, total_pnl = fetch_positions(addr), fetch_trades(addr), fetch_pnl(addr)
             except Exception as e:
-                st.error(f"Failed to fetch data for {lbl}: {e}")
+                st.error(f"Failed to fetch: {e}")
                 continue
-            today = date.today()
-            active_positions, closed_positions = [], []
+            today_d = date.today()
+            active_pos, closed_pos = [], []
             for p in positions:
                 end = p.get("endDate")
-                try:
-                    is_active = date.fromisoformat(end) >= today if end else True
-                except (ValueError, TypeError):
-                    is_active = True
-                (active_positions if is_active else closed_positions).append(p)
-            wins = [p for p in closed_positions if float(p.get("cashPnl", 0)) + float(p.get("realizedPnl", 0)) > 0]
-            win_rate = (len(wins) / len(closed_positions) * 100) if closed_positions else 0
-            mcol1, mcol2, mcol3 = st.columns(3)
-            mcol1.metric("Total P&L", f"${total_pnl:+,.2f}")
-            mcol2.metric("Win Rate", f"{win_rate:.1f}%")
-            mcol3.metric("Open Positions", len(active_positions))
-            tab_pos, tab_trades = st.tabs([f"📈 Positions ({len(active_positions)})", f"🔄 Trades ({len(trades)})"])
-            with tab_pos:
-                if not active_positions:
-                    st.info("No open positions")
+                try: is_active = date.fromisoformat(end) >= today_d if end else True
+                except: is_active = True
+                (active_pos if is_active else closed_pos).append(p)
+            w_wins = [p for p in closed_pos if float(p.get("cashPnl", 0)) + float(p.get("realizedPnl", 0)) > 0]
+            w_wr = (len(w_wins) / len(closed_pos) * 100) if closed_pos else 0
+            m1, m2, m3 = st.columns(3)
+            pnl_color = "#10b981" if total_pnl >= 0 else "#ef4444"
+            m1.metric("Total P&L", f"${total_pnl:+,.2f}")
+            m2.metric("Win Rate", f"{w_wr:.1f}%")
+            m3.metric("Open Positions", len(active_pos))
+            t_pos, t_trades = st.tabs([f"Positions ({len(active_pos)})", f"Trades ({len(trades)})"])
+            with t_pos:
+                if not active_pos:
+                    st.markdown('<p class="pt-meta">No open positions</p>', unsafe_allow_html=True)
                 else:
-                    rows = [{"Market": p.get("title", "?"), "Side": (p.get("outcome") or "Yes").upper(), "Size": float(p.get("size", 0)), "Avg Price": float(p.get("avgPrice", 0)), "Cur Price": float(p.get("curPrice", 0)), "P&L ($)": float(p.get("cashPnl", 0))} for p in active_positions]
-                    st.dataframe(rows, use_container_width=True, hide_index=True, column_config={"Size": st.column_config.NumberColumn(format="%.2f"), "Avg Price": st.column_config.NumberColumn(format="%.3f"), "Cur Price": st.column_config.NumberColumn(format="%.3f"), "P&L ($)": st.column_config.NumberColumn(format="%+.2f")})
-            with tab_trades:
+                    rows = [{"Market": p.get("title","?"), "Side": (p.get("outcome") or "Yes").upper(), "Size": float(p.get("size",0)), "Avg": float(p.get("avgPrice",0)), "Current": float(p.get("curPrice",0)), "P&L": float(p.get("cashPnl",0))} for p in active_pos]
+                    st.dataframe(rows, use_container_width=True, hide_index=True, column_config={"Size": st.column_config.NumberColumn(format="%.2f"), "Avg": st.column_config.NumberColumn(format="%.3f"), "Current": st.column_config.NumberColumn(format="%.3f"), "P&L": st.column_config.NumberColumn(format="%+.2f")})
+            with t_trades:
                 if not trades:
-                    st.info("No recent trades")
+                    st.markdown('<p class="pt-meta">No recent trades</p>', unsafe_allow_html=True)
                 else:
-                    rows = [{"Market": t.get("title", "—"), "Side": (t.get("side") or "BUY").upper(), "Size": float(t.get("size", 0)), "Price": float(t.get("price", 0)), "Time": datetime.fromtimestamp(t["timestamp"]).strftime("%Y-%m-%d %H:%M") if t.get("timestamp") else "—"} for t in trades]
+                    rows = [{"Market": t.get("title","--"), "Side": (t.get("side") or "BUY").upper(), "Size": float(t.get("size",0)), "Price": float(t.get("price",0)), "Time": datetime.fromtimestamp(t["timestamp"]).strftime("%Y-%m-%d %H:%M") if t.get("timestamp") else "--"} for t in trades]
                     st.dataframe(rows, use_container_width=True, hide_index=True, column_config={"Size": st.column_config.NumberColumn(format="%.2f"), "Price": st.column_config.NumberColumn(format="%.3f")})
 
         @st.fragment(run_every=60)
         def poll_alerts():
             wlist = load_wallets()
-            if not wlist:
-                return
+            if not wlist: return
             threshold = st.session_state.alert_threshold
             new_alerts = []
             for w in wlist:
                 a, l = w["address"], w["label"]
-                try:
-                    recent = fetch_recent_trades(a)
-                except Exception:
-                    continue
-                if not recent:
-                    continue
+                try: recent = fetch_recent_trades(a)
+                except: continue
+                if not recent: continue
                 last_known = st.session_state.last_trade_ts.get(a, 0)
                 if last_known == 0:
                     st.session_state.last_trade_ts[a] = recent[0].get("timestamp", 0)
                     continue
                 for t in recent:
                     ts = t.get("timestamp", 0)
-                    if ts <= last_known:
-                        break
+                    if ts <= last_known: break
                     usdc = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
-                    if usdc < threshold:
-                        continue
-                    msg = f'🚨 **{l}** — {(t.get("side") or "BUY").upper()} {float(t.get("size",0)):.1f} shares "{t.get("title","?")}" à {float(t.get("price",0))*100:.0f}¢'
+                    if usdc < threshold: continue
+                    msg = f'<b>{l}</b> -- {(t.get("side") or "BUY").upper()} {float(t.get("size",0)):.1f} shares "{t.get("title","?")[:50]}" at {float(t.get("price",0))*100:.0f}c'
                     new_alerts.append({"msg": msg, "time": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"), "ts": ts})
-                    st.toast(msg, icon="🚨")
+                    st.toast(f'{l} -- new trade detected', icon=None)
                 latest = recent[0].get("timestamp", 0)
-                if latest > last_known:
-                    st.session_state.last_trade_ts[a] = latest
-            if new_alerts:
-                st.session_state.alerts = (new_alerts + st.session_state.alerts)[:20]
+                if latest > last_known: st.session_state.last_trade_ts[a] = latest
+            if new_alerts: st.session_state.alerts = (new_alerts + st.session_state.alerts)[:20]
         poll_alerts()
-        st.divider()
-        if st.button("🔄 Refresh all data", use_container_width=True, key="refresh_wallets"):
+        if st.button("Refresh", use_container_width=True, key="refresh_wallets"):
             st.cache_data.clear()
             st.rerun()
 
-# ═════════════════════════════════════════════
-# TAB 2: ANALYSTE IA
-# ═════════════════════════════════════════════
+# =============================================
+# TAB 2: ANALYST
+# =============================================
 
-with main_tab_analyst:
-
+with tab_analyst:
     now_str = datetime.now().strftime("%H:%M:%S")
-
-    # ── Fetch all data upfront ──
     all_prices = fetch_all_prices()
     fg = fetch_fear_greed()
     all_news = fetch_all_news()
-
     has_api_key = "ANTHROPIC_API_KEY" in st.secrets
 
-    # ── Build context for AI ──
     def build_full_context():
-        lines = ["DONNÉES MARCHÉ :"]
+        lines = ["MARKET DATA:"]
         for cat, syms in TICKERS.items():
             for sym in syms:
                 d = all_prices.get(sym, {"price": 0, "change": 0, "label": sym})
                 lines.append(f"  {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)")
-        # Macro indicators block
-        vix = all_prices.get("^VIX", {"price": 0, "change": 0})
-        tnx = all_prices.get("^TNX", {"price": 0, "change": 0})
-        gold = all_prices.get("GC=F", {"price": 0, "change": 0})
-        oil = all_prices.get("CL=F", {"price": 0, "change": 0})
-        dxy = all_prices.get("DX-Y.NYB", {"price": 0, "change": 0})
-        lines.append(f"\nINDICATEURS MACRO :")
-        lines.append(f"  VIX : {vix['price']:.1f} ({vix['change']:+.2f}%)")
-        lines.append(f"  Taux 10 ans US : {tnx['price']:.2f}% ({tnx['change']:+.2f}%)")
-        lines.append(f"  Or : ${gold['price']:,.0f} ({gold['change']:+.2f}%)")
-        lines.append(f"  Pétrole WTI : ${oil['price']:.2f} ({oil['change']:+.2f}%)")
-        lines.append(f"  DXY : {dxy['price']:.2f} ({dxy['change']:+.2f}%)")
-        lines.append(f"  Fear & Greed : {fg['value']} — {fg['label']}")
-        breaking = [n for n in all_news if n["breaking"]]
-        normal = [n for n in all_news if not n["breaking"]]
-        top_news = (breaking + normal)[:10]
-        lines.append(f"\nDERNIÈRES NEWS ({len(top_news)}) :")
-        for n in top_news:
-            prefix = "[BREAKING] " if n["breaking"] else ""
-            lines.append(f"  - {prefix}[{n['source']}] {n['title']} ({time_ago(n['time'])})")
+        vix, tnx = all_prices.get("^VIX", {"price":0,"change":0}), all_prices.get("^TNX", {"price":0,"change":0})
+        gold, oil = all_prices.get("GC=F", {"price":0,"change":0}), all_prices.get("CL=F", {"price":0,"change":0})
+        dxy = all_prices.get("DX-Y.NYB", {"price":0,"change":0})
+        lines.append(f"\nMACRO:\n  VIX: {vix['price']:.1f} ({vix['change']:+.2f}%)\n  US 10Y: {tnx['price']:.2f}% ({tnx['change']:+.2f}%)")
+        lines.append(f"  Gold: ${gold['price']:,.0f} ({gold['change']:+.2f}%)\n  Oil WTI: ${oil['price']:.2f} ({oil['change']:+.2f}%)")
+        lines.append(f"  DXY: {dxy['price']:.2f} ({dxy['change']:+.2f}%)\n  Fear & Greed: {fg['value']} -- {fg['label']}")
+        brk = [n for n in all_news if n["breaking"]]
+        nrm = [n for n in all_news if not n["breaking"]]
+        lines.append("\nNEWS:")
+        for n in (brk + nrm)[:10]:
+            lines.append(f"  - {'[BREAKING] ' if n['breaking'] else ''}[{n['source']}] {n['title']} ({time_ago(n['time'])})")
         return "\n".join(lines)
 
     SYSTEM_PROMPT = """Tu es un analyste financier senior. Tu couvres crypto, actions US et EU, forex et macro.
-
-À partir des données marché et news fournies, génère systématiquement :
-1. SIGNAL global (RISK ON 🟢 / RISK OFF 🔴 / NEUTRE ⚠️) en une phrase
+A partir des donnees marche et news fournies, genere systematiquement :
+1. SIGNAL global (RISK ON / RISK OFF / NEUTRE) en une phrase
 2. CONTEXTE macro en 2 phrases max
-3. 2 à 3 OPPORTUNITÉS ou ALERTES concrètes sur des actifs spécifiques, chacune avec :
+3. 2 a 3 OPPORTUNITES ou ALERTES concretes sur des actifs specifiques, chacune avec :
    - Le nom de l'actif et sa variation
-   - 1 phrase de justification basée sur les données
+   - 1 phrase de justification basee sur les donnees
    - 1 recommandation directe (long / short / attendre / surveiller)
-
-Sois direct et actionnable. Pas de disclaimer. Pas de 'il faudrait considérer'. Réponds en français."""
+Sois direct et actionnable. Pas de disclaimer. Reponds en francais."""
 
     def run_global_analysis():
-        """Run Claude analysis and store in session_state."""
         context = build_full_context()
         try:
             from anthropic import Anthropic
             client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-            resp = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1200,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": f"{context}\n\nGénère ton analyse."}],
-            )
+            resp = client.messages.create(model="claude-sonnet-4-20250514", max_tokens=1200, system=SYSTEM_PROMPT,
+                                          messages=[{"role": "user", "content": f"{context}\n\nGenere ton analyse."}])
             text = resp.content[0].text
             st.session_state.analyses.append({"time": now_str, "text": text})
             st.session_state.analyses = st.session_state.analyses[-24:]
             return text
         except Exception as e:
-            return f"Erreur Claude API : {e}"
+            return f"Claude API error: {e}"
 
-    # ──────────────────────────────────────────
-    # SECTION 1: ANALYSE IA (TOP OF PAGE)
-    # ──────────────────────────────────────────
-
-    st.markdown("#### 🤖 Analyse IA")
-
+    # -- AI Analysis section --
+    st.markdown('<div class="pt-section">AI ANALYSIS</div>', unsafe_allow_html=True)
     if not has_api_key:
-        st.warning("Ajoute `ANTHROPIC_API_KEY` dans tes secrets Streamlit pour activer l'analyse IA.")
+        st.warning("Add ANTHROPIC_API_KEY to Streamlit secrets to enable AI analysis.")
     else:
-        # Auto-generate on first load
         if not st.session_state.auto_analysis_done and not st.session_state.analyses:
-            with st.spinner("Génération de l'analyse initiale..."):
+            with st.spinner("Generating initial analysis..."):
                 run_global_analysis()
             st.session_state.auto_analysis_done = True
 
-        # Display latest analysis
         if st.session_state.analyses:
             latest = st.session_state.analyses[-1]
             text = latest["text"]
-            text_lower = text.lower()
-
-            # Signal box
-            if "risk off" in text_lower:
-                st.markdown('<div class="signal-box signal-risk-off">🔴 RISK OFF</div>', unsafe_allow_html=True)
-            elif "risk on" in text_lower:
-                st.markdown('<div class="signal-box signal-risk-on">🟢 RISK ON</div>', unsafe_allow_html=True)
-            elif "neutre" in text_lower:
-                st.markdown('<div class="signal-box signal-neutral">⚠️ NEUTRE</div>', unsafe_allow_html=True)
-
-            st.markdown(f'<div class="analysis-box">', unsafe_allow_html=True)
-            st.caption(f"Générée à {latest['time']}")
+            tl = text.lower()
+            if "risk off" in tl:
+                st.markdown('<div class="pt-signal pt-signal-off"><span class="pt-dot" style="background:#ef4444;"></span><span style="font-weight:600; font-size:14px;">RISK OFF</span></div>', unsafe_allow_html=True)
+            elif "risk on" in tl:
+                st.markdown('<div class="pt-signal pt-signal-on"><span class="pt-dot" style="background:#10b981;"></span><span style="font-weight:600; font-size:14px;">RISK ON</span></div>', unsafe_allow_html=True)
+            elif "neutre" in tl:
+                st.markdown('<div class="pt-signal pt-signal-neutral"><span class="pt-dot" style="background:#f59e0b;"></span><span style="font-weight:600; font-size:14px;">NEUTRAL</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="pt-card"><div class="pt-meta" style="margin-bottom:12px;">Generated at {latest["time"]}</div>', unsafe_allow_html=True)
             st.markdown(text)
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Regenerate button
-        acol1, acol2 = st.columns(2)
-        if acol1.button("🔄 Régénérer l'analyse", use_container_width=True, key="regen_analysis"):
-            with st.spinner("Claude analyse les marchés..."):
-                run_global_analysis()
+        c1, c2 = st.columns(2)
+        if c1.button("Regenerate Analysis", use_container_width=True, key="regen"):
+            with st.spinner("Analyzing..."): run_global_analysis()
             st.rerun()
-        if acol2.button("📋 Résumé du jour", use_container_width=True, key="gen_summary"):
-            if not st.session_state.analyses:
-                st.warning("Aucune analyse à résumer.")
+        if c2.button("Daily Summary", use_container_width=True, key="summary"):
+            if not st.session_state.analyses: st.warning("No analyses to summarize.")
             else:
                 all_a = "\n\n---\n\n".join(f"[{a['time']}]\n{a['text']}" for a in st.session_state.analyses)
-                with st.spinner("Génération du résumé..."):
+                with st.spinner("Generating..."):
                     try:
                         from anthropic import Anthropic
                         client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-                        resp = client.messages.create(
-                            model="claude-sonnet-4-20250514", max_tokens=1500,
-                            system="Tu es un analyste macro senior. Produis un résumé quotidien : 1) SYNTHÈSE DU JOUR 2) ÉVÉNEMENTS CLÉS 3) ÉVOLUTION DU SENTIMENT 4) SIGNAL DE FIN DE JOURNÉE. Réponds en français.",
-                            messages=[{"role": "user", "content": f"Analyses de la journée :\n\n{all_a}"}],
-                        )
+                        resp = client.messages.create(model="claude-sonnet-4-20250514", max_tokens=1500,
+                            system="Resume quotidien. 1) SYNTHESE 2) EVENEMENTS CLES 3) EVOLUTION DU SENTIMENT 4) SIGNAL. Francais.",
+                            messages=[{"role": "user", "content": f"Analyses:\n\n{all_a}"}])
                         st.session_state.daily_summaries.append({"date": date.today().isoformat(), "time": now_str, "text": resp.content[0].text})
                         st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur : {e}")
+                    except Exception as e: st.error(f"Error: {e}")
 
         if st.session_state.daily_summaries:
             for s in reversed(st.session_state.daily_summaries):
-                with st.expander(f"📋 Résumé du {s['date']} ({s['time']})"):
+                with st.expander(f"Summary {s['date']} ({s['time']})"):
                     st.markdown(s["text"])
 
-    st.divider()
-
-    # ──────────────────────────────────────────
-    # SECTION 2: LIVE HEADER + PRICES
-    # ──────────────────────────────────────────
-
+    # -- Prices --
+    st.markdown('<div class="pt-section">MARKET PRICES</div>', unsafe_allow_html=True)
     hdr1, hdr2 = st.columns([6, 1])
-    hdr1.markdown(f"🔴 **LIVE** &nbsp; Dernière MAJ : `{now_str}`")
-    if hdr2.button("⟳ Refresh", key="refresh_analyst", use_container_width=True):
+    hdr1.markdown(f'<div style="display:flex; align-items:center; gap:6px;"><span class="pt-dot" style="background:#10b981; animation:pulse 2s infinite;"></span><span style="color:#6b7280; font-size:12px;">Last update: {now_str}</span></div>', unsafe_allow_html=True)
+    if hdr2.button("Refresh", key="refresh_analyst", use_container_width=True):
         st.cache_data.clear()
         st.session_state.auto_analysis_done = False
         st.rerun()
 
-    # Prices by category
     cat_tabs = st.tabs(list(TICKERS.keys()))
-    for cat_tab, (cat_name, syms) in zip(cat_tabs, TICKERS.items()):
+    for cat_tab, (_, syms) in zip(cat_tabs, TICKERS.items()):
         with cat_tab:
             cols = st.columns(len(syms))
             for col, sym in zip(cols, syms):
@@ -539,568 +560,320 @@ Sois direct et actionnable. Pas de disclaimer. Pas de 'il faudrait considérer'.
                 col.metric(d["label"], fmt_price(d["price"], sym), f"{d['change']:+.2f}%")
 
     # Fear & Greed
-    fg_val = fg["value"]
-    fg_label = fg["label"]
-    if fg_val <= 25:
-        fg_color, fg_emoji = "#dc2626", "😨"
-    elif fg_val <= 45:
-        fg_color, fg_emoji = "#f97316", "😟"
-    elif fg_val <= 55:
-        fg_color, fg_emoji = "#eab308", "😐"
-    elif fg_val <= 75:
-        fg_color, fg_emoji = "#22c55e", "😊"
-    else:
-        fg_color, fg_emoji = "#16a34a", "🤑"
+    fg_val, fg_label = fg["value"], fg["label"]
+    fg_color = "#ef4444" if fg_val <= 25 else "#f97316" if fg_val <= 45 else "#eab308" if fg_val <= 55 else "#10b981"
+    st.markdown(f'<div style="display:flex; align-items:center; gap:12px; margin:12px 0;"><span style="color:#6b7280; font-size:13px;">Fear & Greed</span><span style="color:#fff; font-weight:600;">{fg_val}</span><span style="color:{fg_color}; font-size:13px;">{fg_label}</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="pt-fg-bar"><div class="pt-fg-fill" style="width:{fg_val}%; background:{fg_color};"></div></div>', unsafe_allow_html=True)
 
-    st.markdown(f"**Fear & Greed** : {fg_val} — {fg_label} {fg_emoji}")
-    st.markdown(f'<div class="fg-bar-bg"><div class="fg-bar-fill" style="width:{fg_val}%; background:{fg_color};"></div></div>', unsafe_allow_html=True)
-
-    st.divider()
-
-    # ──────────────────────────────────────────
-    # SECTION 3: NEWS FEED
-    # ──────────────────────────────────────────
-
-    st.markdown("#### 📰 Flux news live")
-
-    fcol1, fcol2 = st.columns(2)
-    filter_ticker = fcol1.text_input("Filtre ticker", placeholder="ex: Hermès, Bitcoin, Fed...", key="filter_ticker", label_visibility="collapsed")
-    filter_kw = fcol2.text_input("Filtre mot-clé", placeholder="mot-clé...", key="filter_kw", label_visibility="collapsed")
-
-    filtered_news = all_news
+    # -- News --
+    st.markdown('<div class="pt-section">NEWS FEED</div>', unsafe_allow_html=True)
+    fc1, fc2 = st.columns(2)
+    filter_ticker = fc1.text_input("Filter ticker", placeholder="e.g. Hermes, Bitcoin, Fed...", key="filter_ticker", label_visibility="collapsed")
+    filter_kw = fc2.text_input("Filter keyword", placeholder="keyword...", key="filter_kw", label_visibility="collapsed")
+    filtered = all_news
     if filter_ticker.strip():
         ft = filter_ticker.strip().lower()
-        filtered_news = [n for n in filtered_news if ft in n["title"].lower() or any(ft in t.lower() for t in n["tickers"])]
+        filtered = [n for n in filtered if ft in n["title"].lower() or any(ft in t.lower() for t in n["tickers"])]
     if filter_kw.strip():
         fk = filter_kw.strip().lower()
-        filtered_news = [n for n in filtered_news if fk in n["title"].lower()]
-
-    breaking = [n for n in filtered_news if n["breaking"]]
-    normal = [n for n in filtered_news if not n["breaking"]]
-
-    for idx, item in enumerate((breaking + normal)[:25]):
-        is_brk = item["breaking"]
-        css_class = "news-breaking" if is_brk else "news-item"
-        badges = ""
-        if is_brk:
-            badges += '<span class="badge-breaking">BREAKING</span>'
+        filtered = [n for n in filtered if fk in n["title"].lower()]
+    brk = [n for n in filtered if n["breaking"]]
+    nrm = [n for n in filtered if not n["breaking"]]
+    for idx, item in enumerate((brk + nrm)[:25]):
+        css = "pt-news-breaking" if item["breaking"] else "pt-news"
+        badges = '<span class="pt-breaking-badge">BREAKING</span>' if item["breaking"] else ""
         for t in item.get("tickers", []):
-            badges += f'<span class="badge-ticker">{t}</span>'
+            badges += f'<span class="pt-ticker-badge">{t}</span>'
         ago = time_ago(item["time"])
-
-        st.markdown(f'<div class="{css_class}">{badges}{item["title"]}<br/><span class="news-source">{item["source"]}</span> · <span class="news-time">{ago}</span></div>', unsafe_allow_html=True)
-
-        # Per-article AI analysis button
-        if has_api_key and (is_brk or item.get("tickers")):
-            if st.button("🧠 Analyser ce titre IA", key=f"analyze_news_{idx}", type="secondary"):
-                ticker_match = item["tickers"][0] if item["tickers"] else None
-                ticker_price_info = ""
-                if ticker_match:
+        st.markdown(f'<div class="{css}">{badges}<span style="color:#fff;">{item["title"]}</span><br/><span class="pt-source">{item["source"]}</span> <span class="pt-meta">{ago}</span></div>', unsafe_allow_html=True)
+        if has_api_key and (item["breaking"] or item.get("tickers")):
+            if st.button("Analyze", key=f"an_{idx}", type="secondary"):
+                tk = item["tickers"][0] if item["tickers"] else None
+                tpi = ""
+                if tk:
                     for sym, d in all_prices.items():
-                        if d["label"] == ticker_match:
-                            ticker_price_info = f"Prix actuel {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)"
-                            break
-                vix_info = all_prices.get("^VIX", {"price": 0})
-                fg_summary = f"Fear & Greed: {fg_val} ({fg_label}), VIX: {vix_info['price']:.1f}"
-                macro_summary = f"BTC {all_prices.get('BTC-USD',{}).get('change',0):+.1f}%, SPY {all_prices.get('SPY',{}).get('change',0):+.1f}%, DXY {all_prices.get('DX-Y.NYB',{}).get('change',0):+.1f}%"
-
-                user_msg = f"""News détectée{f' sur {ticker_match}' if ticker_match else ''} :
-"{item['title']}"
-Source : {item['source']}, publié {ago}
-{ticker_price_info}
-Contexte macro : {macro_summary}. {fg_summary}.
-Question : trade à envisager ? Si oui, dans quel sens, à quel niveau, quel stop ?"""
-
-                with st.spinner(f"Analyse en cours..."):
+                        if d["label"] == tk: tpi = f"Current price {d['label']}: {fmt_price(d['price'], sym)} ({d['change']:+.2f}%)"; break
+                vix_p = all_prices.get("^VIX", {"price": 0})
+                macro = f"BTC {all_prices.get('BTC-USD',{}).get('change',0):+.1f}%, SPY {all_prices.get('SPY',{}).get('change',0):+.1f}%, DXY {all_prices.get('DX-Y.NYB',{}).get('change',0):+.1f}%"
+                user_msg = f'News{f" on {tk}" if tk else ""}:\n"{item["title"]}"\nSource: {item["source"]}, {ago}\n{tpi}\nMacro: {macro}. F&G: {fg_val} ({fg_label}), VIX: {vix_p["price"]:.1f}\nTrade idea? Direction, level, stop?'
+                with st.spinner("Analyzing..."):
                     try:
                         from anthropic import Anthropic
                         client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-                        resp = client.messages.create(
-                            model="claude-sonnet-4-20250514", max_tokens=800,
-                            system="Tu es un analyste financier senior couvrant crypto, actions US/EU et forex. Sois direct, concis, actionnable. Pas de disclaimer. Donne des niveaux précis si pertinent. Réponds en français.",
-                            messages=[{"role": "user", "content": user_msg}],
-                        )
-                        st.info(resp.content[0].text)
-                    except Exception as e:
-                        st.error(f"Erreur : {e}")
+                        resp = client.messages.create(model="claude-sonnet-4-20250514", max_tokens=800,
+                            system="Analyste financier senior. Direct, concis, actionnable. Niveaux precis. Francais.",
+                            messages=[{"role": "user", "content": user_msg}])
+                        st.markdown(f'<div class="pt-card">{resp.content[0].text}</div>', unsafe_allow_html=True)
+                    except Exception as e: st.error(f"Error: {e}")
 
-    # ── Auto-refresh every 60s ──
     @st.fragment(run_every=60)
     def auto_refresh_analyst():
         st.cache_data.clear()
     auto_refresh_analyst()
 
-# ═════════════════════════════════════════════
+# =============================================
 # TAB 3: PAPER TRADING
-# ═════════════════════════════════════════════
+# =============================================
 
-with main_tab_paper:
-
+with tab_paper:
     GITHUB_RAW = "https://raw.githubusercontent.com/hectorm17/polymarket-tracker/main"
-    PAPER_CSV_LOCAL = Path("paper_trades.csv")
-    PAPER_STATE_LOCAL = Path("monitor_state.json")
 
     @st.cache_data(ttl=60)
     def load_paper_csv():
-        # Try local first (when running locally alongside live_monitor)
-        if PAPER_CSV_LOCAL.exists():
-            return pd.read_csv(PAPER_CSV_LOCAL)
-        # Fallback: fetch from GitHub
+        if Path("paper_trades.csv").exists(): return pd.read_csv("paper_trades.csv")
         try:
             import io
             r = requests.get(f"{GITHUB_RAW}/paper_trades.csv", timeout=10)
-            if r.status_code == 200:
-                return pd.read_csv(io.StringIO(r.text))
-        except Exception:
-            pass
+            if r.status_code == 200: return pd.read_csv(io.StringIO(r.text))
+        except: pass
         return None
 
     @st.cache_data(ttl=60)
     def load_paper_state():
-        if PAPER_STATE_LOCAL.exists():
-            with open(PAPER_STATE_LOCAL) as f:
-                return _json.load(f)
+        if Path("monitor_state.json").exists():
+            with open("monitor_state.json") as f: return _json.load(f)
         try:
             r = requests.get(f"{GITHUB_RAW}/monitor_state.json", timeout=10)
-            if r.status_code == 200:
-                return r.json()
-        except Exception:
-            pass
+            if r.status_code == 200: return r.json()
+        except: pass
         return None
 
     hdr1, hdr2 = st.columns([6, 1])
-    hdr1.markdown(f"🟡 **PAPER TRADING LIVE** &nbsp; Dernière MAJ : `{datetime.now().strftime('%H:%M:%S')}`")
-    if hdr2.button("⟳ Refresh", key="refresh_paper", use_container_width=True):
+    hdr1.markdown(f'<div style="display:flex; align-items:center; gap:8px;"><span class="pt-dot" style="background:#f59e0b;"></span><span style="color:#fff; font-weight:500;">Paper Trading</span><span class="pt-meta">{datetime.now().strftime("%H:%M:%S")}</span></div>', unsafe_allow_html=True)
+    if hdr2.button("Refresh", key="refresh_paper", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-    # ── Load data ──
-    df = load_paper_csv()
-    state_data = load_paper_state()
+    df_paper = load_paper_csv()
+    state_paper = load_paper_state()
 
-    if df is None or state_data is None:
-        st.warning("Live monitor pas encore démarré. Lance `python3 live_monitor.py` dans un terminal, ou les données n'ont pas encore été pushées sur GitHub.")
+    if df_paper is None or state_paper is None:
+        st.markdown('<div class="pt-empty"><p style="font-size:14px;">Paper trading not started</p><p style="font-size:12px;">Run python3 live_monitor.py to begin</p></div>', unsafe_allow_html=True)
     else:
+        bankroll = state_paper.get("bankroll", 1000)
+        all_pt = state_paper.get("trades", [])
+        resolved_pt = [t for t in all_pt if t.get("status") == "resolved"]
+        pending_pt = [t for t in all_pt if t.get("status") == "pending"]
+        total_pt_pnl = sum(t.get("pnl", 0) for t in resolved_pt)
+        pt_wins = len([t for t in resolved_pt if t.get("pnl", 0) > 0])
+        pt_losses = len(resolved_pt) - pt_wins
+        pt_wr = (pt_wins / len(resolved_pt) * 100) if resolved_pt else 0
+        pt_roi = (bankroll - 1000) / 1000 * 100
+        start_t = state_paper.get("start_time", "")
+        try:
+            d = datetime.now() - datetime.fromisoformat(start_t)
+            running = f"{d.days}d {d.seconds // 3600}h"
+        except: running = "--"
 
-        bankroll = state_data.get("bankroll", 1000)
-        start_time = state_data.get("start_time", "")
-        all_trades = state_data.get("trades", [])
-
-        resolved_trades = [t for t in all_trades if t.get("status") == "resolved"]
-        pending_trades = [t for t in all_trades if t.get("status") == "pending"]
-
-        total_pnl = sum(t.get("pnl", 0) for t in resolved_trades)
-        wins = len([t for t in resolved_trades if t.get("pnl", 0) > 0])
-        losses = len(resolved_trades) - wins
-        win_rate = (wins / len(resolved_trades) * 100) if resolved_trades else 0
-        roi = (bankroll - 1000) / 1000 * 100
-
-        # ── Running time ──
-        if start_time:
-            try:
-                delta = datetime.now() - datetime.fromisoformat(start_time)
-                running = f"{delta.days}j {delta.seconds // 3600}h"
-            except Exception:
-                running = "—"
-        else:
-            running = "—"
-
-        # ── Metrics row ──
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Bankroll", f"${bankroll:,.2f}", f"{roi:+.1f}%")
-        m2.metric("Win Rate", f"{win_rate:.1f}%", f"{wins}W / {losses}L")
-        m3.metric("P&L Total", f"${total_pnl:+,.2f}")
-        m4.metric("Trades", f"{len(resolved_trades)} / {len(all_trades)}", f"Running {running}")
+        m1.metric("Bankroll", f"${bankroll:,.2f}", f"{pt_roi:+.1f}%")
+        m2.metric("Win Rate", f"{pt_wr:.1f}%", f"{pt_wins}W / {pt_losses}L")
+        m3.metric("P&L", f"${total_pt_pnl:+,.2f}")
+        m4.metric("Trades", f"{len(resolved_pt)} / {len(all_pt)}", f"Running {running}")
 
-        # ── Go-live indicator ──
-        if len(resolved_trades) >= 20 and win_rate > 75:
-            st.success(f"🟢 **READY FOR LIVE** — Win rate {win_rate:.1f}% sur {len(resolved_trades)} trades résolus")
-        elif len(resolved_trades) >= 20:
-            st.error(f"🔴 Win rate {win_rate:.1f}% < 75% — Continuer le paper trading")
+        # Go-live indicator
+        if len(resolved_pt) >= 20 and pt_wr > 75:
+            st.markdown('<div class="pt-signal pt-signal-on"><span class="pt-dot" style="background:#10b981;"></span><span style="font-weight:600; font-size:13px;">READY FOR LIVE -- Win rate {:.1f}% on {} trades</span></div>'.format(pt_wr, len(resolved_pt)), unsafe_allow_html=True)
+        elif len(resolved_pt) >= 20:
+            st.markdown(f'<div class="pt-signal pt-signal-off"><span class="pt-dot" style="background:#ef4444;"></span><span style="font-weight:600; font-size:13px;">Win rate {pt_wr:.1f}% below 75% -- continue paper trading</span></div>', unsafe_allow_html=True)
         else:
-            st.info(f"⏳ {len(resolved_trades)}/20 trades résolus minimum avant évaluation")
+            st.markdown(f'<div class="pt-signal pt-signal-neutral"><span class="pt-dot" style="background:#f59e0b;"></span><span style="font-weight:600; font-size:13px;">{len(resolved_pt)}/20 resolved trades before evaluation</span></div>', unsafe_allow_html=True)
 
-        st.divider()
-
-        # ── Equity curve ──
-        if resolved_trades:
-            st.markdown("##### 📈 Courbe de bankroll")
-            sorted_resolved = sorted(resolved_trades, key=lambda t: t.get("timestamp", ""))
-            cumulative = [1000]
-            timestamps = [sorted_resolved[0].get("timestamp", "")[:10] if sorted_resolved else ""]
-            for t in sorted_resolved:
-                cumulative.append(cumulative[-1] + t.get("pnl", 0))
-                timestamps.append(t.get("timestamp", "")[:16])
-
+        # Equity curve
+        if resolved_pt:
+            st.markdown('<div class="pt-section">EQUITY CURVE</div>', unsafe_allow_html=True)
+            sorted_r = sorted(resolved_pt, key=lambda t: t.get("timestamp", ""))
+            cumul = [1000]
+            for t in sorted_r: cumul.append(cumul[-1] + t.get("pnl", 0))
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=list(range(len(cumulative))),
-                y=cumulative,
-                mode="lines+markers",
-                line=dict(color="#00ff88", width=2),
-                marker=dict(size=4),
-                name="Bankroll",
-                hovertemplate="Trade #%{x}<br>Bankroll: $%{y:,.2f}<extra></extra>",
-            ))
-            fig.add_hline(y=1000, line_dash="dash", line_color="#6b7280", annotation_text="Start $1,000")
-            fig.update_layout(
-                height=300,
-                margin=dict(l=0, r=0, t=10, b=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="white"),
-                xaxis=dict(title="Trade #", gridcolor="#1f2937"),
-                yaxis=dict(title="Bankroll ($)", gridcolor="#1f2937"),
-            )
+            fig.add_trace(go.Scatter(x=list(range(len(cumul))), y=cumul, mode="lines+markers",
+                line=dict(color="#4f6ef7", width=2), marker=dict(size=3, color="#4f6ef7"),
+                hovertemplate="Trade #%{x}<br>$%{y:,.2f}<extra></extra>"))
+            fig.add_hline(y=1000, line_dash="dash", line_color="#374151")
+            fig.update_layout(height=280, margin=dict(l=0, r=0, t=10, b=0),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#6b7280", family="Inter"),
+                xaxis=dict(title="Trade #", gridcolor="#1e2130", zeroline=False),
+                yaxis=dict(title="Bankroll ($)", gridcolor="#1e2130", zeroline=False))
             st.plotly_chart(fig, use_container_width=True)
 
-        st.divider()
-
-        # ── Pending trades ──
-        st.markdown(f"##### ⏳ En attente ({len(pending_trades)})")
-        if pending_trades:
-            pending_rows = []
-            for t in sorted(pending_trades, key=lambda x: x.get("date", "")):
-                pending_rows.append({
-                    "Ville": t.get("city", ""),
-                    "Date": t.get("date", ""),
-                    "Target": t.get("target", ""),
-                    "Prévision": f"{t.get('forecast', '')}°C",
-                    "Prix mkt": f"{t.get('mkt_price', 0):.1%}",
-                    "Edge": f"{t.get('edge', 0):+.3f}",
-                    "Signal": t.get("signal", ""),
-                    "Mise": f"${t.get('stake', 0):.0f}",
-                })
-            st.dataframe(pending_rows, use_container_width=True, hide_index=True)
+        # Pending
+        st.markdown(f'<div class="pt-section">PENDING ({len(pending_pt)})</div>', unsafe_allow_html=True)
+        if pending_pt:
+            rows = [{"City": t.get("city",""), "Date": t.get("date",""), "Target": t.get("target",""),
+                     "Forecast": f"{t.get('forecast','')}C", "Market": f"{t.get('mkt_price',0):.1%}",
+                     "Edge": f"{t.get('edge',0):+.3f}", "Signal": t.get("signal",""), "Stake": f"${t.get('stake',0):.0f}"}
+                    for t in sorted(pending_pt, key=lambda x: x.get("date",""))]
+            st.dataframe(rows, use_container_width=True, hide_index=True)
         else:
-            st.caption("Aucun trade en attente.")
+            st.markdown('<p class="pt-meta">No pending trades</p>', unsafe_allow_html=True)
 
-        st.divider()
-
-        # ── Resolved trades ──
-        st.markdown(f"##### 📋 Résolus ({len(resolved_trades)})")
-        if resolved_trades:
-            resolved_rows = []
-            for t in reversed(sorted(resolved_trades, key=lambda x: x.get("timestamp", ""))):
-                pnl_val = t.get("pnl", 0)
-                icon = "✅" if pnl_val > 0 else "❌"
-                resolved_rows.append({
-                    "": icon,
-                    "Ville": t.get("city", ""),
-                    "Date": t.get("date", ""),
-                    "Target": t.get("target", ""),
-                    "Signal": t.get("signal", ""),
-                    "Réel": f"{t.get('real_temp', '?')}°C",
-                    "Résultat": t.get("result", ""),
-                    "P&L": f"${pnl_val:+.2f}",
-                    "Mise": f"${t.get('stake', 0):.0f}",
-                })
-            st.dataframe(resolved_rows, use_container_width=True, hide_index=True)
+        # Resolved
+        st.markdown(f'<div class="pt-section">RESOLVED ({len(resolved_pt)})</div>', unsafe_allow_html=True)
+        if resolved_pt:
+            rows = []
+            for t in reversed(sorted(resolved_pt, key=lambda x: x.get("timestamp",""))):
+                pv = t.get("pnl", 0)
+                rows.append({"Status": "WIN" if pv > 0 else "LOSS", "City": t.get("city",""), "Date": t.get("date",""),
+                             "Target": t.get("target",""), "Signal": t.get("signal",""),
+                             "Actual": f"{t.get('real_temp','?')}C", "Result": t.get("result",""),
+                             "P&L": f"${pv:+.2f}", "Stake": f"${t.get('stake',0):.0f}"})
+            st.dataframe(rows, use_container_width=True, hide_index=True)
         else:
-            st.caption("Aucun trade résolu pour le moment.")
+            st.markdown('<p class="pt-meta">No resolved trades yet</p>', unsafe_allow_html=True)
 
-        # ── Stats by city ──
-        if resolved_trades:
-            st.divider()
-            st.markdown("##### 🌍 Performance par ville")
-            city_stats = {}
-            for t in resolved_trades:
+        # By city
+        if resolved_pt:
+            st.markdown('<div class="pt-section">PERFORMANCE BY CITY</div>', unsafe_allow_html=True)
+            cs = {}
+            for t in resolved_pt:
                 c = t.get("city", "?")
-                if c not in city_stats:
-                    city_stats[c] = {"wins": 0, "losses": 0, "pnl": 0}
-                if t.get("pnl", 0) > 0:
-                    city_stats[c]["wins"] += 1
-                else:
-                    city_stats[c]["losses"] += 1
-                city_stats[c]["pnl"] += t.get("pnl", 0)
+                if c not in cs: cs[c] = {"w": 0, "l": 0, "pnl": 0}
+                if t.get("pnl", 0) > 0: cs[c]["w"] += 1
+                else: cs[c]["l"] += 1
+                cs[c]["pnl"] += t.get("pnl", 0)
+            rows = [{"City": c, "Trades": s["w"]+s["l"], "W/L": f"{s['w']}/{s['l']}",
+                     "Win Rate": f"{s['w']/(s['w']+s['l'])*100:.0f}%", "P&L": f"${s['pnl']:+.2f}"}
+                    for c, s in sorted(cs.items(), key=lambda x: -x[1]["pnl"])]
+            st.dataframe(rows, use_container_width=True, hide_index=True)
 
-            city_rows = []
-            for c, s in sorted(city_stats.items(), key=lambda x: -x[1]["pnl"]):
-                total = s["wins"] + s["losses"]
-                wr = s["wins"] / total * 100 if total else 0
-                city_rows.append({
-                    "Ville": c,
-                    "Trades": total,
-                    "W/L": f"{s['wins']}/{s['losses']}",
-                    "Win Rate": f"{wr:.0f}%",
-                    "P&L": f"${s['pnl']:+.2f}",
-                })
-            st.dataframe(city_rows, use_container_width=True, hide_index=True)
-
-    # ── Auto-refresh every 60s ──
     @st.fragment(run_every=60)
     def auto_refresh_paper():
-        pass  # fragment triggers rerun
+        pass
     auto_refresh_paper()
 
-# ═════════════════════════════════════════════
-# TAB 4: LIVE FEED & LEADERBOARD
-# ═════════════════════════════════════════════
+# =============================================
+# TAB 4: LIVE FEED
+# =============================================
 
-with main_tab_live:
+with tab_live:
+    WHALE_THRESHOLD = 500
+    now_str_live = datetime.now().strftime("%H:%M:%S")
 
-    # ── Session state for this tab ──
-    if "tracked_whales" not in st.session_state:
-        st.session_state.tracked_whales = [
-            {"addr": "0x2a2c53bd278c04da9962fcf96490e17f3dfb9bc1", "label": "Whale-Tennis", "fav": True},
-            {"addr": "0xbddf61af533ff524d27154e589d2d7a81510c684", "label": "Whale-NBA", "fav": True},
-            {"addr": "0x2005d16a84ceefa912d4e380cd32e7ff827875ea", "label": "Whale-Football", "fav": False},
-            {"addr": "0xee613b3fc183ee44f9da9c05f53e2da107e3debf", "label": "Whale-Mixed", "fav": False},
-            {"addr": "0xc2e7800b5af46e6093872b177b7a5e7f0563be51", "label": "Warriors-Fan", "fav": False},
-            {"addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11", "label": "ColdMath", "fav": False},
-        ]
-    if "whale_alerts_history" not in st.session_state:
-        st.session_state.whale_alerts_history = []
+    st.markdown(f'<div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;"><span class="pt-dot" style="background:#10b981; animation:pulse 2s infinite;"></span><span style="color:#fff; font-weight:500;">Live Feed</span><span class="pt-meta">{now_str_live} -- 30s refresh</span></div>', unsafe_allow_html=True)
 
-    WHALE_THRESHOLD = 500  # $
-
-    # ── Data fetchers ──
-    @st.cache_data(ttl=30)
-    def fetch_whale_trades(address):
-        try:
-            r = requests.get(f"{DATA_API}/trades", params={"user": address.lower(), "limit": 20}, timeout=15)
-            r.raise_for_status()
-            return r.json()
-        except Exception:
-            return []
-
-    @st.cache_data(ttl=60)
-    def fetch_whale_value(address):
-        try:
-            r = requests.get(f"{DATA_API}/value", params={"user": address.lower()}, timeout=10)
-            data = r.json()
-            return float(data[0].get("value", 0)) if data else 0
-        except Exception:
-            return 0
-
-    @st.cache_data(ttl=60)
-    def fetch_whale_pnl(address):
-        try:
-            r = requests.get(f"{LB_API}/profit", params={"window": "all", "address": address.lower()}, timeout=10)
-            data = r.json()
-            return float(data[0].get("amount", 0)) if data else 0
-        except Exception:
-            return 0
-
-    @st.cache_data(ttl=60)
-    def fetch_whale_positions_count(address):
-        try:
-            r = requests.get(f"{DATA_API}/positions", params={"user": address.lower(), "sizeThreshold": 0.1, "limit": 1}, timeout=10)
-            return len(r.json())
-        except Exception:
-            return 0
-
-    def detect_specialty(trades):
-        """Guess trader specialty from recent trade titles."""
-        cats = {"Sports": 0, "Crypto": 0, "Politics": 0, "Weather": 0, "Other": 0}
-        sport_kw = ["win", "beat", "spread", "nba", "nfl", "nhl", "tennis", "grand prix", "fc ", "vs.", "match"]
-        crypto_kw = ["bitcoin", "btc", "eth", "crypto", "up or down"]
-        politics_kw = ["trump", "election", "president", "congress", "vote", "poll"]
-        weather_kw = ["temperature", "weather", "highest temp"]
-        for t in trades:
-            title = (t.get("title") or "").lower()
-            if any(k in title for k in sport_kw): cats["Sports"] += 1
-            elif any(k in title for k in crypto_kw): cats["Crypto"] += 1
-            elif any(k in title for k in politics_kw): cats["Politics"] += 1
-            elif any(k in title for k in weather_kw): cats["Weather"] += 1
-            else: cats["Other"] += 1
-        return max(cats, key=cats.get) if trades else "?"
-
-    def short_addr(addr):
-        return addr[:6] + "..." + addr[-4:]
-
-    # ── Header ──
-    now_str = datetime.now().strftime("%H:%M:%S")
-    hdr1, hdr2 = st.columns([6, 1])
-    hdr1.markdown(f"📡 **LIVE FEED** &nbsp; `{now_str}` &nbsp; Refresh 30s")
-    if hdr2.button("⟳", key="refresh_live", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
-    # ── Whale Alerts (top of page) ──
-    all_recent_trades = []
-    whale_alerts = []
-    leaderboard_data = []
-
+    all_feed, whale_alerts, lb_data = [], [], []
     tracked = st.session_state.tracked_whales
 
     for w in tracked:
-        addr = w["addr"]
-        label = w["label"]
-        trades_list = fetch_whale_trades(addr)
-        value = fetch_whale_value(addr)
+        addr, label = w["addr"], w["label"]
+        tl = fetch_whale_trades(addr)
+        val = fetch_whale_value(addr)
         pnl = fetch_whale_pnl(addr)
-        specialty = detect_specialty(trades_list)
-
-        # Enrich trades with wallet info
-        for t in trades_list:
-            t["_label"] = label
-            t["_addr"] = addr
-            t["_fav"] = w.get("fav", False)
+        spec = detect_specialty(tl)
+        for t in tl:
             usdc = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
-            t["_usdc"] = usdc
-            all_recent_trades.append(t)
-            if usdc >= WHALE_THRESHOLD:
-                whale_alerts.append(t)
+            t["_label"], t["_addr"], t["_fav"], t["_usdc"] = label, addr, w.get("fav", False), usdc
+            all_feed.append(t)
+            if usdc >= WHALE_THRESHOLD: whale_alerts.append(t)
+        last_ts = tl[0].get("timestamp", 0) if tl else 0
+        lb_data.append({"fav": w.get("fav", False), "addr": addr, "label": label, "pnl": pnl, "value": val,
+                        "specialty": spec, "last": datetime.fromtimestamp(last_ts).strftime("%H:%M") if last_ts else "--",
+                        "trades": len(tl)})
 
-        # Last activity
-        last_ts = trades_list[0].get("timestamp", 0) if trades_list else 0
-        last_activity = datetime.fromtimestamp(last_ts).strftime("%H:%M") if last_ts else "—"
-
-        leaderboard_data.append({
-            "fav": w.get("fav", False),
-            "addr": addr,
-            "label": label,
-            "pnl": pnl,
-            "value": value,
-            "specialty": specialty,
-            "last_activity": last_activity,
-            "trades_count": len(trades_list),
-        })
-
-    # Display whale alerts
+    # Whale alerts
     if whale_alerts:
         whale_alerts.sort(key=lambda t: t.get("timestamp", 0), reverse=True)
         for t in whale_alerts[:5]:
             side = (t.get("side") or "BUY").upper()
-            emoji = "🟢" if side == "BUY" else "🔴"
-            title = t.get("title", "?")[:55]
-            st.markdown(
-                f'<div class="news-breaking">'
-                f'<span class="badge-breaking">WHALE ${t["_usdc"]:,.0f}</span> '
-                f'{emoji} **{t["_label"]}** {side} — "{title}" — ${t["_usdc"]:,.0f}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        st.divider()
+            sc = "pt-side-buy" if side == "BUY" else "pt-side-sell"
+            st.markdown(f'<div class="pt-row" style="background:#131620; border:1px solid #1e2130; border-radius:8px; margin-bottom:4px;"><span class="pt-whale-badge">WHALE ${t["_usdc"]:,.0f}</span><span class="{sc}">{side}</span><span class="pt-addr">{t["_label"]}</span><span class="pt-title">{t.get("title","?")[:55]}</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="border-top:1px solid #1e2130; margin:12px 0;"></div>', unsafe_allow_html=True)
 
-    # ── Leaderboard ──
-    st.markdown("##### 🏆 Leaderboard")
-    leaderboard_data.sort(key=lambda x: (-x["fav"], -x["pnl"]))
-    lb_rows = []
-    for i, d in enumerate(leaderboard_data):
-        star = "⭐ " if d["fav"] else ""
-        lb_rows.append({
-            "#": i + 1,
-            "Wallet": f"{star}{d['label']}",
-            "Adresse": short_addr(d["addr"]),
-            "P&L Total": f"${d['pnl']:+,.0f}",
-            "Positions Value": f"${d['value']:,.0f}",
-            "Spécialité": d["specialty"],
-            "Dernière activité": d["last_activity"],
-        })
-    st.dataframe(lb_rows, use_container_width=True, hide_index=True)
+    # Leaderboard
+    st.markdown('<div class="pt-section">LEADERBOARD</div>', unsafe_allow_html=True)
+    lb_data.sort(key=lambda x: (-x["fav"], -x["pnl"]))
 
-    st.divider()
+    # Header row
+    st.markdown('''<div style="display:grid; grid-template-columns:40px 2fr 120px 120px 100px 1fr;
+                padding:8px 16px; color:#374151; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">
+        <div>#</div><div>WALLET</div><div style="text-align:right;">PROFIT</div>
+        <div style="text-align:right;">VALUE</div><div style="text-align:right;">TRADES</div><div style="text-align:right;">SPECIALTY</div>
+    </div>''', unsafe_allow_html=True)
 
-    # ── Live Feed ──
-    st.markdown("##### 📡 Live Feed — Tous les trades récents")
-    all_recent_trades.sort(key=lambda t: t.get("timestamp", 0), reverse=True)
+    for i, d in enumerate(lb_data):
+        rank = i + 1
+        rc = {1: "#c9a84c", 2: "#888", 3: "#a0522d"}.get(rank, "#374151")
+        pc = "#10b981" if d["pnl"] >= 0 else "#ef4444"
+        sign = "+" if d["pnl"] >= 0 else ""
+        whale = '<span class="pt-whale-badge" style="margin-left:6px;">Whale</span>' if d["pnl"] > 100000 else ""
+        fav_mark = '<span style="color:#c9a84c; margin-right:4px;">*</span>' if d["fav"] else ""
+        st.markdown(f'''<div style="display:grid; grid-template-columns:40px 2fr 120px 120px 100px 1fr;
+            align-items:center; padding:14px 16px; border-bottom:1px solid #131620; transition:background 0.1s;"
+            onmouseover="this.style.background='#131620'" onmouseout="this.style.background='transparent'">
+            <div style="color:{rc}; font-size:14px; font-weight:600;">{rank}</div>
+            <div>{fav_mark}<span class="pt-addr">{short_addr(d["addr"])}</span>{whale}<div style="color:#6b7280; font-size:12px; margin-top:2px;">{d["label"]}</div></div>
+            <div style="color:{pc}; font-weight:500; text-align:right;">{sign}${d["pnl"]:,.0f}</div>
+            <div style="color:#6b7280; text-align:right;">${d["value"]:,.0f}</div>
+            <div style="color:#6b7280; text-align:right;">{d["trades"]}</div>
+            <div style="color:#374151; text-align:right; font-size:12px;">{d["specialty"]}</div>
+        </div>''', unsafe_allow_html=True)
 
-    for t in all_recent_trades[:30]:
+    # Live feed
+    st.markdown('<div class="pt-section">RECENT TRADES</div>', unsafe_allow_html=True)
+    all_feed.sort(key=lambda t: t.get("timestamp", 0), reverse=True)
+    for t in all_feed[:30]:
         ts = t.get("timestamp", 0)
         time_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S") if ts else "?"
         side = (t.get("side") or "BUY").upper()
-        emoji = "🟢" if side == "BUY" else "🔴"
-        title = t.get("title", "?")[:55]
-        outcome = t.get("outcome", "")
+        sc = "pt-side-buy" if side == "BUY" else "pt-side-sell"
         usdc = t["_usdc"]
-        label = t["_label"]
-        fav_star = "⭐" if t.get("_fav") else ""
+        ac = "pt-amount-green" if side == "BUY" else "pt-amount-red"
+        st.markdown(f'<div class="pt-row"><span class="pt-time">{time_str}</span><span class="pt-addr">{short_addr(t["_addr"])}</span><span class="{sc}">{side}</span><span class="pt-title">{t.get("title","?")[:55]}</span><span class="{ac}">${usdc:,.0f}</span></div>', unsafe_allow_html=True)
 
-        size_class = "badge-breaking" if usdc >= WHALE_THRESHOLD else "badge-ticker"
-        size_label = f"${usdc:,.0f}" if usdc >= 1 else "<$1"
-
-        st.markdown(
-            f'<div class="news-item">'
-            f'{emoji} <span class="news-time">[{time_str}]</span> '
-            f'{fav_star}<b>{label}</b> '
-            f'{side} {outcome} — {title} '
-            f'<span class="{size_class}">{size_label}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-
-    st.divider()
-
-    # ── Wallet Discovery ──
-    st.markdown("##### 🔍 Wallet Discovery")
+    # Wallet Discovery
+    st.markdown('<div class="pt-section">WALLET DISCOVERY</div>', unsafe_allow_html=True)
     with st.form("discover_wallet", clear_on_submit=True):
-        dcols = st.columns([4, 1])
-        discover_addr = dcols[0].text_input("Adresse", placeholder="0x...", label_visibility="collapsed")
-        discover_btn = dcols[1].form_submit_button("Rechercher", use_container_width=True)
+        dc = st.columns([4, 1])
+        disc_addr = dc[0].text_input("Address", placeholder="0x...", label_visibility="collapsed")
+        disc_btn = dc[1].form_submit_button("Search", use_container_width=True)
 
-    if discover_btn and discover_addr.strip():
-        addr = discover_addr.strip().lower()
-        with st.spinner("Recherche..."):
-            d_trades = fetch_whale_trades(addr)
-            d_pnl = fetch_whale_pnl(addr)
-            d_value = fetch_whale_value(addr)
-            d_spec = detect_specialty(d_trades)
-
-        st.markdown(f"**{short_addr(addr)}** — {d_spec}")
-        dc1, dc2, dc3 = st.columns(3)
-        dc1.metric("P&L", f"${d_pnl:+,.0f}")
-        dc2.metric("Value", f"${d_value:,.0f}")
-        dc3.metric("Trades récents", len(d_trades))
-
-        if d_trades:
-            st.markdown("**Derniers trades :**")
-            for t in d_trades[:5]:
+    if disc_btn and disc_addr.strip():
+        a = disc_addr.strip().lower()
+        with st.spinner("Searching..."):
+            dt, dp, dv, ds = fetch_whale_trades(a), fetch_whale_pnl(a), fetch_whale_value(a), detect_specialty(fetch_whale_trades(a))
+        st.markdown(f'<div style="margin:8px 0;"><span class="pt-addr">{short_addr(a)}</span> <span class="pt-meta">-- {ds}</span></div>', unsafe_allow_html=True)
+        d1, d2, d3 = st.columns(3)
+        d1.metric("P&L", f"${dp:+,.0f}")
+        d2.metric("Value", f"${dv:,.0f}")
+        d3.metric("Recent Trades", len(dt))
+        if dt:
+            for t in dt[:5]:
                 side = (t.get("side") or "BUY").upper()
-                emoji = "🟢" if side == "BUY" else "🔴"
+                sc = "pt-side-buy" if side == "BUY" else "pt-side-sell"
                 usdc = float(t.get("usdcSize", 0)) or float(t.get("size", 0)) * float(t.get("price", 0))
-                st.markdown(f"{emoji} {side} {t.get('outcome','')} — {t.get('title','?')[:55]} — ${usdc:,.0f}")
-
-        # Add to tracking button
-        already = any(w["addr"] == addr for w in st.session_state.tracked_whales)
+                st.markdown(f'<div class="pt-row"><span class="{sc}">{side}</span><span style="color:#6b7280;">{t.get("outcome","")}</span><span class="pt-title">{t.get("title","?")[:50]}</span><span class="pt-amount">${usdc:,.0f}</span></div>', unsafe_allow_html=True)
+        already = any(w["addr"] == a for w in st.session_state.tracked_whales)
         if not already:
-            lbl = st.text_input("Label pour ce wallet", value=short_addr(addr), key="disc_label")
-            if st.button("➕ Ajouter au suivi", key="add_discovered"):
-                st.session_state.tracked_whales.append({"addr": addr, "label": lbl, "fav": False})
+            lbl = st.text_input("Label", value=short_addr(a), key="disc_label")
+            if st.button("Add to tracking", key="add_disc"):
+                st.session_state.tracked_whales.append({"addr": a, "label": lbl, "fav": False})
                 st.cache_data.clear()
                 st.rerun()
         else:
-            st.info("Ce wallet est déjà suivi.")
+            st.markdown('<p class="pt-meta">Already tracked</p>', unsafe_allow_html=True)
 
-    st.divider()
-
-    # ── Manage tracked wallets ──
-    with st.expander("⚙️ Gérer les wallets suivis"):
+    # Manage
+    with st.expander("Manage tracked wallets"):
         for i, w in enumerate(st.session_state.tracked_whales):
             c1, c2, c3, c4 = st.columns([3, 2, 1, 1])
-            c1.text(f"{w['label']}")
-            c2.caption(short_addr(w["addr"]))
-            if c3.button("⭐" if not w["fav"] else "★", key=f"fav_{i}", use_container_width=True):
+            c1.text(w["label"])
+            c2.markdown(f'<span class="pt-addr">{short_addr(w["addr"])}</span>', unsafe_allow_html=True)
+            if c3.button("Fav" if not w["fav"] else "Unfav", key=f"fav_{i}", use_container_width=True):
                 st.session_state.tracked_whales[i]["fav"] = not w["fav"]
                 st.rerun()
-            if c4.button("🗑️", key=f"rm_whale_{i}", use_container_width=True):
+            if c4.button("Del", key=f"rm_w_{i}", use_container_width=True):
                 st.session_state.tracked_whales.pop(i)
                 st.rerun()
 
-    st.divider()
+    # Export
+    if st.button("Export CSV", key="export_csv", use_container_width=True):
+        exp = [{"timestamp": datetime.fromtimestamp(t.get("timestamp",0)).isoformat() if t.get("timestamp") else "",
+                "wallet": t.get("_label",""), "address": t.get("_addr",""), "side": t.get("side",""),
+                "outcome": t.get("outcome",""), "market": t.get("title",""),
+                "size": t.get("size",0), "price": t.get("price",0), "usdc": t.get("_usdc",0)} for t in all_feed]
+        st.download_button("Download", pd.DataFrame(exp).to_csv(index=False), "trades_export.csv", "text/csv")
 
-    # ── Export CSV ──
-    if st.button("📥 Exporter tous les trades (CSV)", key="export_csv", use_container_width=True):
-        export_rows = []
-        for t in all_recent_trades:
-            ts = t.get("timestamp", 0)
-            export_rows.append({
-                "timestamp": datetime.fromtimestamp(ts).isoformat() if ts else "",
-                "wallet": t.get("_label", ""),
-                "address": t.get("_addr", ""),
-                "side": t.get("side", ""),
-                "outcome": t.get("outcome", ""),
-                "market": t.get("title", ""),
-                "size": t.get("size", 0),
-                "price": t.get("price", 0),
-                "usdc": t.get("_usdc", 0),
-            })
-        export_df = pd.DataFrame(export_rows)
-        csv_data = export_df.to_csv(index=False)
-        st.download_button("💾 Télécharger le CSV", csv_data, "whale_trades_export.csv", "text/csv")
-
-    # ── Auto-refresh 30s ──
     @st.fragment(run_every=30)
     def auto_refresh_live():
         st.cache_data.clear()
