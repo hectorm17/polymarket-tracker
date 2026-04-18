@@ -1,5 +1,5 @@
 {
-  "bankroll": 1000.0,
+  "bankroll": 1012.4678200000001,
   "trades": [
     {
       "timestamp": "2026-04-17T21:46:18.749208",
@@ -18,9 +18,11 @@
       "stake": 33.75,
       "event_slug": "highest-temperature-in-buenos-aires-on-april-17-2026",
       "url": "https://polymarket.com/event/highest-temperature-in-buenos-aires-on-april-17-2026",
-      "status": "pending",
-      "result": null,
-      "pnl": 0
+      "status": "resolved",
+      "result": "YES",
+      "pnl": -4.56,
+      "real_temp": 24.6,
+      "correct": false
     },
     {
       "timestamp": "2026-04-17T21:46:18.750339",
@@ -39,9 +41,11 @@
       "stake": 231.62,
       "event_slug": "highest-temperature-in-buenos-aires-on-april-17-2026",
       "url": "https://polymarket.com/event/highest-temperature-in-buenos-aires-on-april-17-2026",
-      "status": "pending",
-      "result": null,
-      "pnl": 0
+      "status": "resolved",
+      "result": "NO",
+      "pnl": 17.02,
+      "real_temp": 24.6,
+      "correct": true
     },
     {
       "timestamp": "2026-04-17T21:46:21.930514",
@@ -945,6 +949,90 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-18T05:14:02.415204",
+      "title": "Will the highest temperature in Moscow be 7\u00b0C on April 18?",
+      "city": "Moscow",
+      "date": "2026-04-18",
+      "target": "7\u00b0C",
+      "target_num": 7,
+      "qualifier": "exact_c",
+      "forecast": 9.7,
+      "mkt_price": 0.08,
+      "our_prob": 0.02,
+      "edge": -0.06,
+      "signal": "BUY NO",
+      "entry_price": 0.06,
+      "stake": 237.93,
+      "event_slug": "highest-temperature-in-moscow-on-april-18-2026",
+      "url": "https://polymarket.com/event/highest-temperature-in-moscow-on-april-18-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-18T05:14:04.062885",
+      "title": "Will the highest temperature in Cape Town be 19\u00b0C on April 18?",
+      "city": "Cape Town",
+      "date": "2026-04-18",
+      "target": "19\u00b0C",
+      "target_num": 19,
+      "qualifier": "exact_c",
+      "forecast": 16.7,
+      "mkt_price": 0.1135,
+      "our_prob": 0.02,
+      "edge": -0.093,
+      "signal": "BUY NO",
+      "entry_price": 0.0935,
+      "stake": 229.45,
+      "event_slug": "highest-temperature-in-cape-town-on-april-18-2026",
+      "url": "https://polymarket.com/event/highest-temperature-in-cape-town-on-april-18-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-18T05:14:04.593319",
+      "title": "Will the highest temperature in Chengdu be 31\u00b0C on April 18?",
+      "city": "Chengdu",
+      "date": "2026-04-18",
+      "target": "31\u00b0C",
+      "target_num": 31,
+      "qualifier": "exact_c",
+      "forecast": 28.7,
+      "mkt_price": 0.125,
+      "our_prob": 0.02,
+      "edge": -0.105,
+      "signal": "BUY NO",
+      "entry_price": 0.105,
+      "stake": 226.54,
+      "event_slug": "highest-temperature-in-chengdu-on-april-18-2026",
+      "url": "https://polymarket.com/event/highest-temperature-in-chengdu-on-april-18-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-18T05:45:01.319861",
+      "title": "Will the highest temperature in Sao Paulo be 26\u00b0C on April 19?",
+      "city": "Sao Paulo",
+      "date": "2026-04-19",
+      "target": "26\u00b0C",
+      "target_num": 26,
+      "qualifier": "exact_c",
+      "forecast": 28.4,
+      "mkt_price": 0.125,
+      "our_prob": 0.02,
+      "edge": -0.105,
+      "signal": "BUY NO",
+      "entry_price": 0.105,
+      "stake": 226.54,
+      "event_slug": "highest-temperature-in-sao-paulo-on-april-19-2026",
+      "url": "https://polymarket.com/event/highest-temperature-in-sao-paulo-on-april-19-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "seen_markets": [
@@ -992,7 +1080,11 @@
     "0x86aa6000fadd08963d8dcbb0f2cf59c84c9b39e417f37c080d4f9eaf75ca5efb_5",
     "0x23df83db1a9088f6fb6e42264ba3ea7425d73c2bdb4ccb0be85600edd6b1b432_6",
     "0x7872d2317c7d5300732d4d44389dda12423860e867f9ea3758a934e67b9f8c80_7",
-    "0x4c296cc73c02622fd1836730219983a95be4428d64407e1b9379537bfd7543b0_68"
+    "0x4c296cc73c02622fd1836730219983a95be4428d64407e1b9379537bfd7543b0_68",
+    "0xcaf6fc5fe55b583cc74ed12d893fc2d916c06e8f9185d42946ab1510709122d9_7",
+    "0x6e4cd795d9fbc5a7ca9b821561da69c38ef4d5639fd7663db8e757cc02b28c31_19",
+    "0x9e0f6fa2c7840f18dac2fa4dea4e01ca2ddf0c1cda9f49afb83912a0de062bd9_31",
+    "0x38651bf8707e11d9d6fd26a2c639c63cf87066f63ed454910dae3d42d5e6e4cf_26"
   ],
   "start_time": "2026-04-17T21:46:08.115335"
 }
