@@ -216,6 +216,24 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-19T11:45:00.192282",
+      "whale": "ColdMath",
+      "whale_addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11",
+      "market": "Will the highest temperature in Shenzhen be 24\u00b0C on April 20?",
+      "outcome": "No",
+      "side": "BUY",
+      "whale_price": 0.994,
+      "our_price": 0.998,
+      "whale_size_usdc": 902.5,
+      "our_stake": 20.0,
+      "asset": "36456025879964980412829480936473565359975635104899348748786621021361630625616",
+      "condition_id": "0x4eab4c31785ec96bdf17773863caffff91245de76305aa3ae98683389fb549ab",
+      "event_slug": "highest-temperature-in-shenzhen-on-april-20-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "known_tx": [
@@ -277,6 +295,7 @@
     "0x311b3b0c1e20f462e17d61c10549e97886113e2053d4d0cd29914d8e98c1aba6",
     "0x4ce0b3052ac55c4933bd8f3a79e51097ddcd169fa8f9b4b08ac02c4b4218af95",
     "0x4a58c2b32218bfa1a3e49c682bf305d040ef1f4c294993ae0a5ab4dc60f2c4b7",
+    "0x255475213a50b97a218d234e1f74e0743ed729f4407c3d675abe851e0e5f4a58",
     "0x8393b05b938b6dcf70c516fa293f31292a77a14407f641f7fdaef87be44c5e07",
     "0x641cf4be6f0825e9ee763441bf0a05e247ef88f8c2cf4b50a8766ec6e5020147",
     "0xda78bd6735408033bdd26b674ba905247a8dd15ab522cd0bcd85cb827611dd0f",
