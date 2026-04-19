@@ -327,7 +327,7 @@ st.markdown('''
 # TABS
 # =============================================
 
-tab_wallets, tab_analyst, tab_paper, tab_live = st.tabs(["Wallets", "Analyst", "Paper Trading", "Live Feed"])
+tab_wallets, tab_analyst, tab_portfolio, tab_ideas, tab_paper, tab_live = st.tabs(["Wallets", "Analyst", "Portfolio", "Trade Ideas", "Paper Trading", "Live Feed"])
 
 # =============================================
 # TAB 1: WALLETS
@@ -444,12 +444,14 @@ with tab_wallets:
 # TAB 2: ANALYST
 # =============================================
 
+# Global data (shared across tabs)
+all_prices = fetch_all_prices()
+fg = fetch_fear_greed()
+all_news = fetch_all_news()
+has_api_key = "ANTHROPIC_API_KEY" in st.secrets
+
 with tab_analyst:
     now_str = datetime.now().strftime("%H:%M:%S")
-    all_prices = fetch_all_prices()
-    fg = fetch_fear_greed()
-    all_news = fetch_all_news()
-    has_api_key = "ANTHROPIC_API_KEY" in st.secrets
 
     def build_full_context():
         lines = ["MARKET DATA:"]
@@ -612,7 +614,23 @@ Sois direct et actionnable. Pas de disclaimer. Reponds en francais."""
     auto_refresh_analyst()
 
 # =============================================
-# TAB 3: PAPER TRADING
+# TAB 3: PORTFOLIO
+# =============================================
+
+with tab_portfolio:
+    from tab_portfolio import render_portfolio_tab
+    pf_rows, pf_alerts, pf_total_value, pf_total_pnl = render_portfolio_tab()
+
+# =============================================
+# TAB 4: TRADE IDEAS
+# =============================================
+
+with tab_ideas:
+    from tab_ideas import render_ideas_tab
+    render_ideas_tab(portfolio_rows=pf_rows, all_prices=all_prices, fg=fg)
+
+# =============================================
+# TAB 5: PAPER TRADING
 # =============================================
 
 with tab_paper:
