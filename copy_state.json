@@ -270,6 +270,24 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-19T11:55:19.221542",
+      "whale": "ColdMath",
+      "whale_addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11",
+      "market": "Will the highest temperature in Jakarta be 34\u00b0C on April 19?",
+      "outcome": "Yes",
+      "side": "BUY",
+      "whale_price": 0.986,
+      "our_price": 0.9935,
+      "whale_size_usdc": 840.98,
+      "our_stake": 20.0,
+      "asset": "86690333154123006665287305627762917947669633380184110086599771388444505618132",
+      "condition_id": "0x919ccfdd160bcf74495f254607551451228d6e18766521e98252f25c39e5ba9a",
+      "event_slug": "highest-temperature-in-jakarta-on-april-19-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "known_tx": [
@@ -301,6 +319,7 @@
     "0x907d8df43fab3a445456b6a18b8b379e1afb2fccd74d5a43216b6c724566e6b9",
     "0xa35b4758783b1115d49edba7e2786ea800f5500d812bd92fd741c95400c9047f",
     "0x6ea9c1be70d68f3204de6ed57e07f4b3b1c94865006628d91e593e616b713b7f",
+    "0x6d1515c1a73d9616d7b737fe733a317f91d61f343bf5705ce9212bcb4002dbd4",
     "0xd3c49b9d4bfd721caa9ada5fc4283ed1febf04de1074bbcc4347e493ec6a0e40",
     "0x76f999c0e9ab1b771353d2417c78207b97b34a4abf9934b55a7469cc114d7557",
     "0xa85767ea5d0acdbb2e96ef0cb269349bca43401f21783f66c9c9dc57b547a95f",
@@ -334,6 +353,7 @@
     "0x336149c48c25cad16736601ababc6525b1620c814583e5a104bc4f3d9d27e7dc",
     "0xc7aa8cd1e2f1ac35572396c7d58dc96dd923b31b62c9b62e28df4196102f3612",
     "0x255475213a50b97a218d234e1f74e0743ed729f4407c3d675abe851e0e5f4a58",
+    "0x3b42466b8a4283194f6f942f4008d5051a247d9bbd1d80c51b845bd657908a3a",
     "0x4a85296215d5417369672867fe22cd0e7c90d4a273627f2e2d4da6b9af0fd37b",
     "0xbac4028d743b389b107ad186bb588dc8c3640fa2251668a61dc96f1706bb9649",
     "0xecc35172b2d0ae314e57613d32920ccbb68bd630d7054dbe8f571b72bce0e3a4",
@@ -346,6 +366,7 @@
     "0x72f0ed3ece84340916b8cbedcc6911ebe8ea7a1a208ca866117c4bd9d417ad98",
     "0x6bf0d321d567be778e79e1169e697dc2c06becb94f0b1ea300966a527c3c89b6",
     "0x8ea66fd5c989f8f5debbf2079d717a41090c37ae73aa35a76e19ed398da01d4c",
+    "0x29b4181ba8b0fe66b35e8e99288f9fab2c74cc0a937d6a288ceb9696b483e34f",
     "0xcfe0170ba9d161bcf7304265685f93dc958be93195bd2bd0aa772bc801846ebc",
     "0xcdd97ac68fb9c86784cb8481848c8150586bb3b6dceadc1786b5335d135c870b",
     "0x6d10e7492f0e3952d1922d377b772453999c6a51265536d66d8d1af92b207818",
