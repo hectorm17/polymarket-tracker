@@ -327,7 +327,7 @@ st.markdown('''
 # TABS
 # =============================================
 
-tab_wallets, tab_analyst, tab_portfolio, tab_ideas, tab_paper, tab_live = st.tabs(["Wallets", "Analyst", "Portfolio", "Trade Ideas", "Paper Trading", "Live Feed"])
+tab_wallets, tab_analyst, tab_portfolio, tab_ideas, tab_copy, tab_paper, tab_live = st.tabs(["Wallets", "Analyst", "Portfolio", "Trade Ideas", "Copy Trading", "Paper Trading", "Live Feed"])
 
 # =============================================
 # TAB 1: WALLETS
@@ -630,7 +630,15 @@ with tab_ideas:
     render_ideas_tab(portfolio_rows=pf_rows, all_prices=all_prices, fg=fg)
 
 # =============================================
-# TAB 5: PAPER TRADING
+# TAB 5: COPY TRADING
+# =============================================
+
+with tab_copy:
+    from tab_copy import render_copy_tab
+    render_copy_tab()
+
+# =============================================
+# TAB 6: PAPER TRADING
 # =============================================
 
 with tab_paper:

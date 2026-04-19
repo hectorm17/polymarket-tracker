@@ -4,3 +4,5 @@ __pycache__/
 .env
 paper_trades.csv
 monitor_state.json
+copy_trades.csv
+copy_state.json
