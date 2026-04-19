@@ -306,6 +306,24 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-19T12:09:48.611282",
+      "whale": "ColdMath",
+      "whale_addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11",
+      "market": "Will the highest temperature in Jeddah be 40\u00b0C or higher on April 19?",
+      "outcome": "No",
+      "side": "BUY",
+      "whale_price": 0.9897,
+      "our_price": 0.994,
+      "whale_size_usdc": 1103.95,
+      "our_stake": 20.0,
+      "asset": "110492364968259287030235377985729764252493399922496307660694866102557952377851",
+      "condition_id": "0x62a1ed2d5b6dd1fe925d4b4389107910eaf86b1e246bd8cd551b4d3acdc68b26",
+      "event_slug": "highest-temperature-in-jeddah-on-april-19-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "known_tx": [
@@ -326,6 +344,7 @@
     "0x03361c5acbc12f14385ec7d2af64c378d51118ad7f2d578b085350707f35d53a",
     "0xda78bd6735408033bdd26b674ba905247a8dd15ab522cd0bcd85cb827611dd0f",
     "0x28112838d9ee56a7658d72434b5f4e9f0f67e4b47e1884d7a1aa39245814163a",
+    "0x957fa88cda96f1c9bd60f02045b13f2ccc8cc7198d0b42dba6b6f92a00c3131e",
     "0x37ad3a73dcdb5fd28d732b8ebb2d868d42c257eadac35edce7d87b4ec86cbe01",
     "0x53c493518b87d2f8d691027a871215b22ef2821824f8dacb8da7a14f1eaad1cf",
     "0xfce806555ec380eb794bf7fcaf1878219b5630aa761d21d3d6079f067a1c158d",
@@ -355,6 +374,7 @@
     "0x11600df83f490caad3570749ffc13e77b035b98987eaa6e38280e314c83c5b12",
     "0xc853fad1b9d489084ecc20179a7a4528299ed7a6f7eca9f5ec62acbbe6eb3a34",
     "0x0b9875b3b0a7b71c44d43e28249cb79fd28d5800b5500a3a790aa5a5a9b4f592",
+    "0x9c0c3cd9b19b4b89bb70bff79af14beab38ea167f7a646e86675885141a05b56",
     "0xe73a541d8edc8b8d251915f5ad19f24b4d20d82e4f4594e5557985db19a78d7f",
     "0x9af705855710910827f2a4daa30f1671b22a520723d6786810501ce6f76729d8",
     "0x28b3721a0a2f3fd99ea309eaad368bd344d2c65c83926963ee9c9aa37e7543eb",
