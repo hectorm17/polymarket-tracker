@@ -2106,10 +2106,27 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-20T16:46:51.357774",
+      "whale": "ColdMath",
+      "whale_addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11",
+      "market": "Will the highest temperature in Buenos Aires be 23\u00b0C on April 20?",
+      "outcome": "No",
+      "side": "BUY",
+      "whale_price": 0.818,
+      "our_price": 0.85,
+      "whale_size_usdc": 685.77,
+      "our_stake": 20.0,
+      "asset": "43403370063910351323041097995374984192543804731296648768575975620378849649560",
+      "condition_id": "0x17ce58481cf76b82f13e6601a410f30413490cf1219d43b65d266375fb4648ae",
+      "event_slug": "highest-temperature-in-buenos-aires-on-april-20-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "known_tx": [
-    "0xc36ef82ae84deca8151469d0a78b7373fcfae364e17defb1f1d282251fd76227",
     "0xbd1e7d512932631fcc4de8cb993640efab3b802b720e71a33607dadb19549752",
     "0x49c88d0dc89cb97131b9d876c02e1f42985bec0f866ecab53dc59a3b5cdc6af8",
     "0x92978778dc9f35d840d9a378218b123da76e001511010030d9396ec1bc12fe62",
@@ -2235,6 +2252,7 @@
     "0x60f114105a9d78f086a9f4c1dd5985108f504c42c627383eba917f3e6480eb1d",
     "0x2c3703a0c52c6c1863542d71d5c2999d05ddec6d93c91029eadb1280d2fbc9db",
     "0x3b22d7d1dfecfb029f5a58ebecbadb378becdb2ea48f06eb124e60d303ea56ac",
+    "0x913ab845ee4d957ea4d87c1783363ab6b0e7d700d050977733bb29306b9fae3e",
     "0x9a4512d06bb18ffe0fa98f68e7711212a741789de490a7cc7651a47ac4bc3a0f",
     "0x089eee090385698c4653020bc57fd68dd5aa8e0cb84190c80881aec9554ed480",
     "0x94ee73068357c0b9697d268e961c8963ed21799e4ded54c070a7b9858a7ad203",
