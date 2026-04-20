@@ -1152,6 +1152,24 @@
       "status": "pending",
       "result": null,
       "pnl": 0
+    },
+    {
+      "timestamp": "2026-04-20T11:45:05.197570",
+      "whale": "ColdMath",
+      "whale_addr": "0x594edb9112f526fa6a80b8f858a6379c8a2c1c11",
+      "market": "Will the highest temperature in Cape Town be 16\u00b0C on April 22?",
+      "outcome": "No",
+      "side": "BUY",
+      "whale_price": 0.9793,
+      "our_price": 0.987,
+      "whale_size_usdc": 157.51,
+      "our_stake": 20.0,
+      "asset": "76545055654109886989731840828292884183714627379046482809310157041691954659710",
+      "condition_id": "0x614781557ad94655961e2163e94160674527751ba8e7bbfa88f71c43f524dc32",
+      "event_slug": "highest-temperature-in-cape-town-on-april-22-2026",
+      "status": "pending",
+      "result": null,
+      "pnl": 0
     }
   ],
   "known_tx": [
@@ -1170,6 +1188,7 @@
     "0xf23933c780d263100f622b638226feb9be749a34bcf0feb84cc2d329ca3a1225",
     "0x5e0be3b7bf09ddd9c09a9d8eba32b0e3391bc8b330837fc41c818839abeddf91",
     "0xc36ef82ae84deca8151469d0a78b7373fcfae364e17defb1f1d282251fd76227",
+    "0xbd1e7d512932631fcc4de8cb993640efab3b802b720e71a33607dadb19549752",
     "0x49c88d0dc89cb97131b9d876c02e1f42985bec0f866ecab53dc59a3b5cdc6af8",
     "0x9e3c404f2fe02f7ac1e531529d4be7cc16fc3d6b83ca8d970a91a6272aa8e7c9",
     "0x68ab0f47116713b632550cbb82be33d55d957ba21328fad53666bcbbb9897046",
